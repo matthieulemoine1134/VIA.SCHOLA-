@@ -1,7 +1,11 @@
 import React from 'react';
-import { ArrowRight, Wallet, Clock } from 'lucide-react';
+import { ArrowRight, Wallet, Clock, Info } from 'lucide-react';
 
-const TaxCreditSection: React.FC = () => {
+interface TaxCreditSectionProps {
+    onOpenModal: () => void;
+}
+
+const TaxCreditSection: React.FC<TaxCreditSectionProps> = ({ onOpenModal }) => {
   return (
     <section id="tax-credit" className="py-24 bg-navy-900 text-white overflow-hidden relative">
       {/* Background patterns */}
@@ -56,9 +60,6 @@ const TaxCreditSection: React.FC = () => {
                             <p className="text-xl md:text-2xl font-serif font-bold">1 séance d'1h30</p>
                         </div>
                     </div>
-                    <div className="text-right">
-                        <p className="text-2xl font-bold text-gray-300">60€</p>
-                    </div>
                 </div>
 
                 {/* Arrow */}
@@ -86,17 +87,22 @@ const TaxCreditSection: React.FC = () => {
                              <Wallet size={16} className="text-green-400" />
                              <span className="text-xs font-bold text-green-400 uppercase">Même Budget</span>
                         </div>
-                        <p className="text-3xl font-bold text-white">60€</p>
-                        <p className="text-[10px] text-gray-400">*Après crédit d'impôt</p>
                     </div>
                 </div>
 
              </div>
 
-             <div className="mt-8 text-center">
+             <div className="mt-8 text-center space-y-4">
                  <p className="text-lg font-serif italic text-navy-100">
                      "Pour le même prix, doublez le temps de réussite de votre enfant."
                  </p>
+                 <button 
+                    onClick={onOpenModal}
+                    className="inline-flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white border border-white/20 px-6 py-3 rounded-xl font-bold transition-all text-sm uppercase tracking-wide"
+                 >
+                    <Info size={18} />
+                    Demande d'information
+                 </button>
              </div>
           </div>
         </div>

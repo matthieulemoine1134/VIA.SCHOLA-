@@ -11,7 +11,11 @@ const iconMap: Record<string, React.ReactNode> = {
   BrainCircuit: <BrainCircuit size={32} />,
 };
 
-const BentoGrid: React.FC = () => {
+interface BentoGridProps {
+    onOpenModal: (content: { title: string, text: string }) => void;
+}
+
+const BentoGrid: React.FC<BentoGridProps> = ({ onOpenModal }) => {
   return (
     <section id="services" className="py-24 bg-white dark:bg-navy-950">
       <div className="container mx-auto px-4">
@@ -25,7 +29,15 @@ const BentoGrid: React.FC = () => {
         {/* 2 Column Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {SERVICES.map((service) => (
-            <BentoCard key={service.id} service={service} />
+            <BentoCard 
+                key={service.id} 
+                service={service} 
+                onClick={() => {
+                    if (service.modalTitle && service.modalContent) {
+                        onOpenModal({ title: service.modalTitle, text: service.modalContent });
+                    }
+                }}
+            />
           ))}
         </div>
       </div>
@@ -33,7 +45,12 @@ const BentoGrid: React.FC = () => {
   );
 };
 
-const BentoCard: React.FC<{ service: ServiceItem }> = ({ service }) => {
+interface BentoCardProps {
+    service: ServiceItem;
+    onClick: () => void;
+}
+
+const BentoCard: React.FC<BentoCardProps> = ({ service, onClick }) => {
   return (
     <div className={`
       relative group overflow-hidden rounded-3xl p-8 flex flex-col justify-between
@@ -41,8 +58,10 @@ const BentoCard: React.FC<{ service: ServiceItem }> = ({ service }) => {
         ? 'bg-cream dark:bg-navy-800 border-2 border-violet-100 dark:border-navy-600 min-h-[350px]' 
         : 'bg-cream dark:bg-navy-900/50 border border-gray-100 dark:border-navy-800 min-h-[300px]'} 
       ${service.colSpan}
-      hover:shadow-2xl hover:shadow-navy-900/5 transition-all duration-300 hover:-translate-y-1
-    `}>
+      hover:shadow-2xl hover:shadow-navy-900/5 transition-all duration-300 hover:-translate-y-1 cursor-pointer
+    `}
+    onClick={onClick}
+    >
       {service.badge && (
         <div className="absolute top-0 right-0 bg-gold-500 text-navy-900 text-xs font-bold px-4 py-1.5 rounded-bl-xl shadow-sm z-10">
           {service.badge}
@@ -59,10 +78,10 @@ const BentoCard: React.FC<{ service: ServiceItem }> = ({ service }) => {
       </div>
       
       <div className="mt-8">
-        <a href="#" className={`inline-flex items-center gap-1 text-sm font-bold transition-colors group-hover:gap-2 ${service.badge ? 'text-gray-400 cursor-not-allowed hover:text-gray-400' : 'text-navy-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-400'}`}>
+        <span className={`inline-flex items-center gap-1 text-sm font-bold transition-colors group-hover:gap-2 ${service.badge ? 'text-gray-400' : 'text-navy-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-400'}`}>
           {service.linkText}
           {!service.badge && <ArrowUpRight size={16} />}
-        </a>
+        </span>
       </div>
       
       {/* Background decoration */}

@@ -7,12 +7,14 @@ interface ContactModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode: 'bilan' | 'tarifs' | 'candidature';
+  customContent?: { title: string, text: string } | null;
 }
 
-const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, mode }) => {
+const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, mode, customContent }) => {
   if (!isOpen) return null;
 
   const getTitle = () => {
+    if (customContent) return customContent.title;
     switch(mode) {
       case 'tarifs': return 'Tarifs & Devis';
       case 'candidature': return 'Rejoindre l\'équipe';
@@ -46,8 +48,18 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, mode }) =>
         </div>
 
         <div className="p-6 md:p-10">
+            {/* Custom Content for Services */}
+            {customContent && (
+               <div className="mb-8">
+                 <p className="text-navy-700 dark:text-navy-200 text-lg leading-relaxed">
+                   {customContent.text}
+                 </p>
+                 <div className="h-px bg-gray-100 dark:bg-navy-800 mt-8"></div>
+               </div>
+            )}
+
             {/* Conditional Messages */}
-            {mode === 'tarifs' && (
+            {mode === 'tarifs' && !customContent && (
                 <div className="bg-navy-50 dark:bg-navy-800/50 border border-navy-100 dark:border-navy-700 rounded-xl p-5 mb-8 flex gap-4 items-start">
                     <Info className="text-violet-600 dark:text-violet-400 shrink-0 mt-1" size={24} />
                     <div>
@@ -62,7 +74,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, mode }) =>
                 </div>
             )}
 
-             {mode === 'bilan' && (
+             {mode === 'bilan' && !customContent && (
                  <p className="text-navy-600 dark:text-navy-300 mb-8 text-sm">
                      Remplissez ce formulaire pour réserver votre créneau de bilan pédagogique avec un conseiller à Narbonne. C'est gratuit et sans engagement.
                  </p>

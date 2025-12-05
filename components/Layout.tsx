@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Phone, User, Moon, Sun, Briefcase } from 'lucide-react';
+import { Menu, X, Phone, User, Briefcase, GraduationCap } from 'lucide-react';
 import { NAV_ITEMS, COMPANY_INFO } from '../constants';
+import { PageView } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
   onOpenModal: (mode: 'bilan' | 'tarifs' | 'candidature') => void;
+  onNavigate: (view: PageView) => void;
+  currentView: PageView;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, onOpenModal }) => {
+const Layout: React.FC<LayoutProps> = ({ children, onOpenModal, onNavigate, currentView }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
 
   // Handle scroll effect for sticky header
   useEffect(() => {
@@ -21,15 +23,6 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Handle dark mode toggle
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
-
   const handleNavClick = (e: React.MouseEvent, item: typeof NAV_ITEMS[0]) => {
     if (item.label === 'Devenir Prof') {
       e.preventDefault();
@@ -37,6 +30,12 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal }) => {
       setIsMenuOpen(false);
     }
   };
+
+  const handleLogoClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onNavigate('home');
+    setIsMenuOpen(false);
+  }
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-cream dark:bg-navy-950">
@@ -49,16 +48,18 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal }) => {
           </a>
         </div>
         <div className="flex items-center gap-4">
-           <button 
-            onClick={() => setDarkMode(!darkMode)} 
-            className="hover:text-gold-400 transition-colors flex items-center gap-1"
-            aria-label="Toggle dark mode"
+          <button 
+            onClick={() => onNavigate('construction-enseignant')} 
+            className="flex items-center gap-1 hover:text-gold-400 transition-colors"
           >
-            {darkMode ? <Sun size={12} /> : <Moon size={12} />}
+            <GraduationCap size={12} /> Espace Enseignant
           </button>
-          <a href="#" className="flex items-center gap-1 hover:text-gold-400 transition-colors">
+          <button 
+            onClick={() => onNavigate('construction-famille')} 
+            className="flex items-center gap-1 hover:text-gold-400 transition-colors"
+          >
             <User size={12} /> Espace Famille
-          </a>
+          </button>
         </div>
       </div>
 
@@ -66,7 +67,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal }) => {
       <header className={`sticky top-0 w-full z-40 transition-all duration-300 ${scrolled ? 'glass-panel shadow-md py-2' : 'bg-transparent py-4'}`}>
         <div className="container mx-auto px-4 flex justify-between items-center">
           {/* Logo - Serif Font */}
-          <a href="/" className="text-2xl font-bold tracking-tight text-navy-900 dark:text-white flex items-center gap-2 hover:opacity-90 transition-opacity font-serif group">
+          <a href="/" onClick={handleLogoClick} className="text-2xl font-bold tracking-tight text-navy-900 dark:text-white flex items-center gap-2 hover:opacity-90 transition-opacity font-serif group">
             <span className="bg-navy-900 text-gold-500 p-1.5 rounded-lg border border-gold-500/30 shadow-lg group-hover:scale-105 transition-transform duration-300">
               VS
             </span>
@@ -161,7 +162,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal }) => {
             <h4 className="text-white font-serif font-semibold mb-6">Nous Contacter</h4>
             <p className="text-white">{COMPANY_INFO.address}</p>
             <p className="mt-3 font-medium text-gold-400">{COMPANY_INFO.phone}</p>
-            <p className="mt-1">contact@viaschola.fr</p>
+            <p className="mt-1">{COMPANY_INFO.email}</p>
           </div>
 
           <div>

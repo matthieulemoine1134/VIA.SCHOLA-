@@ -34,7 +34,7 @@ const ContactSection: React.FC = () => {
                    <div className="bg-navy-800 p-3 rounded-xl border border-navy-700 group-hover:border-gold-500/50 transition-colors"><Mail size={24} className="text-gold-500" /></div>
                    <div>
                       <p className="text-xs text-navy-400 uppercase tracking-wider font-bold mb-1">Email</p>
-                      <p className="text-lg font-semibold">contact@viaschola.fr</p>
+                      <p className="text-lg font-semibold">contact@via-schola.fr</p>
                    </div>
                  </div>
                  <div className="flex items-start gap-5 group">
@@ -49,7 +49,7 @@ const ContactSection: React.FC = () => {
 
              <div className="mt-12 relative z-10">
                <a 
-                 href="https://wa.me/33468000000" 
+                 href="https://wa.me/33667592555" 
                  target="_blank" 
                  rel="noreferrer"
                  className="bg-[#25D366] hover:bg-[#20bd5a] text-white w-full py-4 rounded-xl font-bold flex items-center justify-center gap-3 transition-all shadow-lg shadow-green-900/20 hover:shadow-green-900/30 text-lg"

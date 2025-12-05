@@ -7,14 +7,8 @@ export interface ServiceItem {
   linkText: string;
   colSpan?: string; // For Bento grid layout
   badge?: string;
-}
-
-export interface Review {
-  id: number;
-  author: string;
-  text: string;
-  rating: number;
-  role: string;
+  modalTitle?: string;
+  modalContent?: string;
 }
 
 export interface NavItem {
@@ -26,4 +20,14 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   isError?: boolean;
+}
+
+export type PageView = 'home' | 'construction-famille' | 'construction-enseignant';
+
+export interface Review {
+  id: string;
+  rating: number;
+  text: string;
+  author: string;
+  role: string;
 }

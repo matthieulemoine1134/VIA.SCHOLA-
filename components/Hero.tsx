@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Star } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const CITIES = [
   "Narbonne",
@@ -103,26 +103,6 @@ const Hero: React.FC<HeroProps> = ({ onOpenModal }) => {
             >
               Voir les tarifs
             </button>
-          </div>
-
-          <div className="pt-8 flex flex-col items-center gap-3 text-sm font-medium text-navy-500 dark:text-navy-400">
-            <div className="flex -space-x-3">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="w-12 h-12 rounded-full border-4 border-white dark:border-navy-900 bg-gray-200 overflow-hidden shadow-sm">
-                  <img src={`https://picsum.photos/seed/${i + 20}/60/60`} alt="Avatar" className="w-full h-full object-cover" />
-                </div>
-              ))}
-            </div>
-            <div className="flex flex-col items-center">
-              <div className="flex items-center text-gold-500 mb-1">
-                <Star size={18} fill="currentColor" />
-                <Star size={18} fill="currentColor" />
-                <Star size={18} fill="currentColor" />
-                <Star size={18} fill="currentColor" />
-                <Star size={18} fill="currentColor" />
-              </div>
-              <span className="font-serif italic text-navy-700 dark:text-navy-300">4.9/5 (120+ avis certifiés)</span>
-            </div>
           </div>
         </div>
       </div>

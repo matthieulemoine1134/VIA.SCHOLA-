@@ -5,6 +5,16 @@ interface CandidatureFormProps {
   onSuccess?: () => void;
 }
 
+const SUBJECTS = [
+  "Mathématiques",
+  "Français",
+  "Physique-Chimie",
+  "Anglais",
+  "Espagnol",
+  "Aide aux devoirs (Primaire/Collège)",
+  "Autre"
+];
+
 const CandidatureForm: React.FC<CandidatureFormProps> = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
     name: '',
@@ -12,6 +22,7 @@ const CandidatureForm: React.FC<CandidatureFormProps> = ({ onSuccess }) => {
     phone: '',
     message: ''
   });
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle');
@@ -20,6 +31,14 @@ const CandidatureForm: React.FC<CandidatureFormProps> = ({ onSuccess }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubjectToggle = (subject: string) => {
+    setSelectedSubjects(prev => 
+      prev.includes(subject) 
+        ? prev.filter(s => s !== subject)
+        : [...prev, subject]
+    );
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,7 +67,7 @@ const CandidatureForm: React.FC<CandidatureFormProps> = ({ onSuccess }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.phone || !file) return;
+    if (!formData.name || !formData.email || !formData.phone || !file || selectedSubjects.length === 0) return;
 
     setStatus('loading');
     // Simulate upload
@@ -56,6 +75,7 @@ const CandidatureForm: React.FC<CandidatureFormProps> = ({ onSuccess }) => {
     
     setStatus('success');
     setFormData({ name: '', email: '', phone: '', message: '' });
+    setSelectedSubjects([]);
     setFile(null);
 
     if (onSuccess) {
@@ -123,6 +143,27 @@ const CandidatureForm: React.FC<CandidatureFormProps> = ({ onSuccess }) => {
       </div>
 
       <div className="space-y-2">
+        <label className="text-sm font-semibold text-navy-700 dark:text-navy-300">Matières enseignées <span className="text-red-500">*</span></label>
+        <div className="grid grid-cols-2 gap-2">
+          {SUBJECTS.map((subject) => (
+            <label key={subject} className="flex items-center gap-2 cursor-pointer group">
+              <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${selectedSubjects.includes(subject) ? 'bg-violet-600 border-violet-600' : 'bg-white border-gray-300'}`}>
+                {selectedSubjects.includes(subject) && <CheckCircle size={14} className="text-white" />}
+              </div>
+              <input 
+                type="checkbox" 
+                className="hidden"
+                checked={selectedSubjects.includes(subject)}
+                onChange={() => handleSubjectToggle(subject)}
+              />
+              <span className="text-sm text-navy-600 dark:text-navy-300 group-hover:text-navy-900 dark:group-hover:text-white transition-colors">{subject}</span>
+            </label>
+          ))}
+        </div>
+         {selectedSubjects.length === 0 && <p className="text-xs text-red-400">Veuillez sélectionner au moins une matière.</p>}
+      </div>
+
+      <div className="space-y-2">
         <label className="text-sm font-semibold text-navy-700 dark:text-navy-300">CV (PDF ou Word) <span className="text-red-500">*</span></label>
         <div 
           onClick={() => fileInputRef.current?.click()}
@@ -181,7 +222,7 @@ const CandidatureForm: React.FC<CandidatureFormProps> = ({ onSuccess }) => {
       </div>
 
       <button 
-        disabled={status === 'loading' || !file}
+        disabled={status === 'loading' || !file || selectedSubjects.length === 0}
         className="bg-navy-900 hover:bg-navy-800 text-white px-8 py-4 rounded-xl font-bold w-full transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
       >
         {status === 'loading' ? (
