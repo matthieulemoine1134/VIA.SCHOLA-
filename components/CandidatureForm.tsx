@@ -70,19 +70,40 @@ const CandidatureForm: React.FC<CandidatureFormProps> = ({ onSuccess }) => {
     if (!formData.name || !formData.email || !formData.phone || !file || selectedSubjects.length === 0) return;
 
     setStatus('loading');
-    // Simulate upload
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setStatus('success');
-    setFormData({ name: '', email: '', phone: '', message: '' });
-    setSelectedSubjects([]);
-    setFile(null);
 
-    if (onSuccess) {
-      setTimeout(() => {
-        onSuccess();
-        setStatus('idle');
-      }, 3000);
+    // Création du paquet de données "Spécial Fichier"
+    const submissionData = new FormData();
+    submissionData.append("form-name", "candidature-narbonne");
+    submissionData.append("name", formData.name);
+    submissionData.append("email", formData.email);
+    submissionData.append("phone", formData.phone);
+    submissionData.append("message", formData.message);
+    // On transforme la liste des matières en une seule ligne de texte
+    submissionData.append("subjects", selectedSubjects.join(", "));
+    // On ajoute le fichier
+    submissionData.append("cv", file);
+
+    try {
+      await fetch("/", {
+        method: "POST",
+        body: submissionData,
+        // Important : Ne pas mettre de 'Content-Type' ici, le navigateur le gère tout seul pour les fichiers
+      });
+      
+      setStatus('success');
+      setFormData({ name: '', email: '', phone: '', message: '' });
+      setSelectedSubjects([]);
+      setFile(null);
+  
+      if (onSuccess) {
+        setTimeout(() => {
+          onSuccess();
+          setStatus('idle');
+        }, 3000);
+      }
+    } catch (error) {
+      alert("Erreur lors de l'envoi du dossier. Veuillez réessayer.");
+      setStatus('idle');
     }
   };
 
@@ -94,7 +115,7 @@ const CandidatureForm: React.FC<CandidatureFormProps> = ({ onSuccess }) => {
         </div>
         <h3 className="text-2xl font-serif font-bold text-navy-900 dark:text-white mb-3">Candidature envoyée !</h3>
         <p className="text-navy-600 dark:text-navy-300 mb-8 max-w-md">
-            Merci de votre intérêt pour Via Schola. Notre responsable pédagogique étudiera votre profil et vous recontactera rapidement.
+            Merci de votre intérêt pour Via Schola. Notre responsable pédagogique va étudier votre CV et vous recontactera rapidement.
         </p>
       </div>
     );

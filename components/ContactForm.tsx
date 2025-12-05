@@ -28,25 +28,40 @@ const ContactForm: React.FC<ContactFormProps> = ({ onSuccess, className = "" }) 
     if (!formData.parentName || !formData.phone || !formData.email) return;
     
     setStatus('loading');
-    
-    // Simulate network request
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setStatus('success');
-    setFormData({
-        parentName: '',
-        email: '',
-        phone: '',
-        studentClass: '',
-        subject: '',
-        details: ''
-    });
 
-    if (onSuccess) {
-      setTimeout(() => {
-        onSuccess();
-        setStatus('idle'); // Reset local status if modal re-opens
-      }, 2000);
+    // On prépare les données pour Netlify (Encodage Formulaire)
+    const encode = (data: any) => {
+      return Object.keys(data)
+        .map(key => encodeURIComponent(key) + "=" + encodeURIComponent(data[key]))
+        .join("&");
+    };
+    
+    try {
+      await fetch("/", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: encode({ "form-name": "contact-narbonne", ...formData })
+      });
+      
+      setStatus('success');
+      setFormData({
+          parentName: '',
+          email: '',
+          phone: '',
+          studentClass: '',
+          subject: '',
+          details: ''
+      });
+  
+      if (onSuccess) {
+        setTimeout(() => {
+          onSuccess();
+          setStatus('idle');
+        }, 2000);
+      }
+    } catch (error) {
+      alert("Erreur lors de l'envoi. Veuillez réessayer.");
+      setStatus('idle');
     }
   };
 
@@ -56,9 +71,9 @@ const ContactForm: React.FC<ContactFormProps> = ({ onSuccess, className = "" }) 
         <div className="w-20 h-20 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-6 shadow-sm">
             <CheckCircle size={40} />
         </div>
-        <h3 className="text-2xl font-serif font-bold text-navy-900 dark:text-white mb-3">Demande enregistrée !</h3>
+        <h3 className="text-2xl font-serif font-bold text-navy-900 dark:text-white mb-3">Demande reçue !</h3>
         <p className="text-navy-600 dark:text-navy-300 mb-8 max-w-md">
-            Merci. Votre demande a bien été transmise à notre équipe pédagogique. Nous vous rappellerons dans les 24h.
+            Parfait. Matthieu ou son équipe vous rappelleront très rapidement pour faire le point.
         </p>
         <button 
             onClick={() => setStatus('idle')}
@@ -71,7 +86,10 @@ const ContactForm: React.FC<ContactFormProps> = ({ onSuccess, className = "" }) 
   }
 
   return (
+    // On garde la structure visuelle, on change juste le onSubmit
     <form className={`space-y-5 ${className}`} onSubmit={handleSubmit}>
+       {/* (Le reste de ton formulaire HTML reste identique, ne change rien ici, garde les inputs comme ils étaient) */}
+       {/* Je te remets juste le début pour que tu te repères, mais garde tes inputs tels quels */}
       <div className="grid md:grid-cols-2 gap-5">
         <div className="space-y-2">
           <label className="text-sm font-semibold text-navy-700 dark:text-navy-300">Nom du parent <span className="text-red-500">*</span></label>

@@ -3,7 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Via Schola - Soutien Scolaire Narbonne</title>
+    
+    <title>Via Schola - Soutien Scolaire à Narbonne & Recrutement Professeurs</title>
+    <meta name="description" content="Agence locale de soutien scolaire à Narbonne. Cours particuliers du CP à la Terminale. Recrutement de professeurs certifiés dans l'Aude." />
+    
+    <meta property="og:title" content="Via Schola - La réussite scolaire à Narbonne" />
+    <meta property="og:description" content="Ne payez que 50% de vos cours en temps réel. Bilan offert." />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1596395819057-d37e25280525?q=80&w=2070&auto=format&fit=crop" />
+    <meta property="og:type" content="website" />
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -11,53 +19,14 @@
         theme: {
           extend: {
             colors: {
-              // Schola Navy (Primary - Confidence, Intellect, Night)
-              navy: {
-                50: '#e6e8eb',
-                100: '#c0c5cc',
-                200: '#949ea8',
-                300: '#637282',
-                400: '#3e4e61',
-                500: '#253245',
-                600: '#1a2536',
-                700: '#121b29',
-                800: '#0e1520',
-                900: '#0A192F', // Official Schola Navy
-                950: '#050c18',
-              },
-              // Via Violet (Accent - Innovation, Future, Electric)
-              violet: {
-                50: '#f0efff',
-                100: '#e3e0ff',
-                200: '#c7c2ff',
-                300: '#aa99ff',
-                400: '#8c6eff',
-                500: '#6C63FF', // Official Via Violet
-                600: '#5a4ce6',
-                700: '#493bbd',
-                800: '#3a2f96',
-                900: '#302878',
-              },
-              // Domitia Gold (Secondary - Excellence, Warmth, History)
-              gold: {
-                50: '#fbf8eb',
-                100: '#f5ecc9',
-                200: '#eddba3',
-                300: '#e4c678',
-                400: '#dbb054',
-                500: '#D4AF37', // Official Domitia Gold
-                600: '#b58e2b',
-                700: '#916f24',
-                800: '#735721',
-                900: '#5e461f',
-              },
-              // Premium Backgrounds
-              cream: '#F8F9FA',
-              paper: '#FDFBF7',
+              navy: { 50: '#e6e8eb', 100: '#c0c5cc', 200: '#949ea8', 300: '#637282', 400: '#3e4e61', 500: '#253245', 600: '#1a2536', 700: '#121b29', 800: '#0e1520', 900: '#0A192F', 950: '#050c18' },
+              violet: { 50: '#f0efff', 100: '#e3e0ff', 200: '#c7c2ff', 300: '#aa99ff', 400: '#8c6eff', 500: '#6C63FF', 600: '#5a4ce6', 700: '#493bbd', 800: '#3a2f96', 900: '#302878' },
+              gold: { 50: '#fbf8eb', 100: '#f5ecc9', 200: '#eddba3', 300: '#e4c678', 400: '#dbb054', 500: '#D4AF37', 600: '#b58e2b', 700: '#916f24', 800: '#735721', 900: '#5e461f' },
+              cream: '#F8F9FA', paper: '#FDFBF7',
             },
             fontFamily: {
               sans: ['"Open Sans"', 'system-ui', 'sans-serif'],
-              serif: ['Montserrat', 'sans-serif'], // Used for Titles
+              serif: ['Montserrat', 'sans-serif'],
             }
           }
         }
@@ -69,45 +38,31 @@
     <style>
       body { font-family: 'Open Sans', sans-serif; }
       h1, h2, h3, h4, h5, h6, .font-serif { font-family: 'Montserrat', sans-serif; }
-      
-      .glass-panel {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-      }
-      .dark .glass-panel {
-        background: rgba(10, 25, 47, 0.85); /* Navy 900 */
-        border: 1px solid rgba(255, 255, 255, 0.05);
-      }
-      
-      /* The Guiding Line (Fil Conducteur) */
-      .guiding-line {
-        position: absolute;
-        width: 1px;
-        background: linear-gradient(to bottom, #6C63FF, #D4AF37);
-        opacity: 0.2;
-        left: 50%;
-        transform: translateX(-50%);
-        height: 100%;
-        z-index: 0;
-        pointer-events: none;
-      }
+      .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); }
+      .dark .glass-panel { background: rgba(10, 25, 47, 0.85); border: 1px solid rgba(255, 255, 255, 0.05); }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "recharts": "https://aistudiocdn.com/recharts@^3.5.1",
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1"
-  }
-}
-</script>
-</head>
+  </head>
   <body class="bg-cream text-navy-900 dark:bg-navy-950 dark:text-cream transition-colors duration-300 selection:bg-violet-200 selection:text-navy-900">
+    
+    <form name="contact-narbonne" netlify netlify-honeypot="bot-field" hidden>
+      <input type="text" name="parentName" />
+      <input type="email" name="email" />
+      <input type="tel" name="phone" />
+      <input type="text" name="studentClass" />
+      <input type="text" name="subject" />
+      <textarea name="details"></textarea>
+    </form>
+
+    <form name="candidature-narbonne" netlify netlify-honeypot="bot-field" hidden enctype="multipart/form-data">
+      <input type="text" name="name" />
+      <input type="email" name="email" />
+      <input type="tel" name="phone" />
+      <input type="text" name="subjects" />
+      <input type="file" name="cv" />
+      <textarea name="message"></textarea>
+    </form>
+
     <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
