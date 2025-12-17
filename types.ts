@@ -23,7 +23,13 @@ export interface ChatMessage {
   isError?: boolean;
 }
 
-export type PageView = 'home' | 'construction-famille' | 'construction-enseignant' | 'admin';
+export type PageView = 
+  | 'home' 
+  | 'construction-famille' 
+  | 'construction-enseignant' 
+  | 'admin'
+  | 'dashboard-famille'
+  | 'dashboard-enseignant';
 
 export interface Review {
   id: string;

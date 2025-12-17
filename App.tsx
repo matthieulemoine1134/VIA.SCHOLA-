@@ -7,8 +7,11 @@ import TaxCreditSection from './components/TaxCreditSection';
 import ContactSection from './components/ContactSection';
 import AiAdvisor from './components/AiAdvisor';
 import ContactModal from './components/ContactModal';
+import LoginModal from './components/LoginModal';
 import ConstructionPage from './components/ConstructionPage';
 import CrmDashboard from './components/crm/CrmDashboard';
+import FamilyDashboard from './components/dashboards/FamilyDashboard';
+import TeacherDashboard from './components/dashboards/TeacherDashboard';
 import { PageView, Family, Activity } from './types';
 import { MOCK_FAMILIES } from './data/mockCrmData';
 
@@ -16,6 +19,11 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'bilan' | 'tarifs' | 'candidature'>('bilan');
   const [modalContent, setModalContent] = useState<{title: string, text: string} | null>(null);
+  
+  // Login Modal State
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [loginType, setLoginType] = useState<'family' | 'teacher' | null>(null);
+
   const [currentView, setCurrentView] = useState<PageView>('home');
 
   // Centralized State for CRM Leads
@@ -33,9 +41,19 @@ function App() {
       setIsModalOpen(true);
   };
 
+  const handleOpenLogin = (type: 'family' | 'teacher') => {
+      setLoginType(type);
+      setIsLoginOpen(true);
+  };
+
   const handleNavigate = (view: PageView) => {
     setCurrentView(view);
     window.scrollTo(0, 0);
+  };
+
+  const handleLoginSuccess = (view: 'dashboard-famille' | 'dashboard-enseignant') => {
+      setCurrentView(view);
+      window.scrollTo(0, 0);
   };
 
   // Function to add a new lead from the public form
@@ -66,11 +84,14 @@ function App() {
       setCrmLeads(prev => [newLead, ...prev]);
   };
 
+  const isPublicPage = currentView === 'home' || currentView.startsWith('construction');
+
   return (
     <>
         <Layout 
           onOpenModal={handleOpenModal} 
           onNavigate={handleNavigate}
+          onOpenLogin={handleOpenLogin}
           currentView={currentView}
         >
             {currentView === 'home' && (
@@ -82,6 +103,7 @@ function App() {
               </>
             )}
             
+            {/* Fallback pages if needed, but Login now routes to dashboards */}
             {currentView === 'construction-famille' && (
               <ConstructionPage 
                 title="Espace Famille" 
@@ -102,8 +124,11 @@ function App() {
                 onLogout={() => handleNavigate('home')} 
               />
             )}
+
+            {currentView === 'dashboard-famille' && <FamilyDashboard />}
+            {currentView === 'dashboard-enseignant' && <TeacherDashboard />}
             
-            {currentView !== 'admin' && <AiAdvisor />}
+            {isPublicPage && <AiAdvisor />}
         </Layout>
         
         <ContactModal 
@@ -112,6 +137,13 @@ function App() {
             customContent={modalContent}
             onClose={() => setIsModalOpen(false)} 
             onAddLead={handleAddLead}
+        />
+
+        <LoginModal 
+            isOpen={isLoginOpen}
+            type={loginType}
+            onClose={() => setIsLoginOpen(false)}
+            onLoginSuccess={handleLoginSuccess}
         />
     </>
   );

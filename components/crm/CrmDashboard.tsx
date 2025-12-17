@@ -439,7 +439,7 @@ const SettingsView = () => {
                             <span className="font-bold text-gold-500">Marge Brute</span>
                             <div className="text-right">
                                 <span className="block text-2xl font-bold text-white">{margin.toFixed(2)} €</span>
-                                <span className={`text-xs font-bold ${Number(marginPercent) > 30 ? 'text-green-400' : 'text-orange-400'}`}>
+                                <span className="text-xs font-bold text-green-400">
                                     {marginPercent}%
                                 </span>
                             </div>
@@ -1704,7 +1704,14 @@ const StatusBadge = ({ status }: { status: string }) => {
     );
 };
 
-const TaskItem = ({ type, title, subtitle, actionLabel }: { type: 'lead' | 'match' | 'renew' | 'candidate', title: string, subtitle: string, actionLabel: string }) => {
+interface TaskItemProps {
+    type: 'lead' | 'match' | 'renew' | 'candidate';
+    title: string;
+    subtitle: string;
+    actionLabel: string;
+}
+
+const TaskItem: React.FC<TaskItemProps> = ({ type, title, subtitle, actionLabel }) => {
     let icon = <UserPlus size={18} />;
     let colorClass = 'bg-blue-500';
 

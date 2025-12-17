@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Phone, User, Briefcase, GraduationCap, ShieldCheck } from 'lucide-react';
+import { Menu, X, Phone, User, Briefcase, GraduationCap, ShieldCheck, LogOut } from 'lucide-react';
 import { NAV_ITEMS, COMPANY_INFO } from '../constants';
 import { PageView } from '../types';
 
@@ -8,10 +8,11 @@ interface LayoutProps {
   children: React.ReactNode;
   onOpenModal: (mode: 'bilan' | 'tarifs' | 'candidature') => void;
   onNavigate: (view: PageView) => void;
+  onOpenLogin: (type: 'family' | 'teacher') => void;
   currentView: PageView;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, onOpenModal, onNavigate, currentView }) => {
+const Layout: React.FC<LayoutProps> = ({ children, onOpenModal, onNavigate, onOpenLogin, currentView }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -38,6 +39,8 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal, onNavigate, curr
     setIsMenuOpen(false);
   }
 
+  const isDashboard = currentView === 'admin' || currentView === 'dashboard-famille' || currentView === 'dashboard-enseignant';
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-cream dark:bg-navy-950">
       {/* Top Bar - Trust & Contact - Navy Background */}
@@ -57,22 +60,33 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal, onNavigate, curr
           </a>
         </div>
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => onNavigate('construction-enseignant')} 
-            className="flex items-center gap-1 hover:text-gold-400 transition-colors"
-          >
-            <GraduationCap size={12} /> Espace Enseignant
-          </button>
-          <button 
-            onClick={() => onNavigate('construction-famille')} 
-            className="flex items-center gap-1 hover:text-gold-400 transition-colors"
-          >
-            <User size={12} /> Espace Famille
-          </button>
+            {isDashboard ? (
+                <button 
+                    onClick={() => onNavigate('home')} 
+                    className="flex items-center gap-1 hover:text-red-400 transition-colors font-bold"
+                >
+                    <LogOut size={12} /> Déconnexion
+                </button>
+            ) : (
+                <>
+                  <button 
+                    onClick={() => onOpenLogin('teacher')} 
+                    className="flex items-center gap-1 hover:text-gold-400 transition-colors"
+                  >
+                    <GraduationCap size={12} /> Espace Enseignant
+                  </button>
+                  <button 
+                    onClick={() => onOpenLogin('family')} 
+                    className="flex items-center gap-1 hover:text-gold-400 transition-colors"
+                  >
+                    <User size={12} /> Espace Famille
+                  </button>
+                </>
+            )}
         </div>
       </div>
 
-      {currentView !== 'admin' && (
+      {!isDashboard && (
       <header className={`sticky top-0 w-full z-40 transition-all duration-300 ${scrolled ? 'glass-panel shadow-md py-2' : 'bg-transparent py-4'}`}>
         <div className="container mx-auto px-4 flex justify-between items-center">
           {/* Logo - Serif Font */}
@@ -144,7 +158,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal, onNavigate, curr
         {children}
       </main>
 
-      {currentView !== 'admin' && (
+      {!isDashboard && (
       <footer className="bg-navy-950 text-navy-300 py-16 text-sm border-t border-navy-900 relative overflow-hidden">
         {/* Decorative Guiding Line */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-navy-800 to-transparent opacity-20"></div>
