@@ -4,10 +4,11 @@ import {
   LayoutDashboard, Users, GraduationCap, Network, FileCheck, Lock, 
   Search, CheckCircle, Clock, AlertCircle, TrendingUp, DollarSign,
   PlusCircle, UserCheck, Calendar, Briefcase, ChevronRight, LogOut,
-  Phone, Mail, Target, ArrowRight, BatteryWarning, UserPlus, FileText
+  Phone, Mail, Target, ArrowRight, BatteryWarning, UserPlus, FileText,
+  MapPin, MoreHorizontal, FileText as FileIcon, X, PenTool
 } from 'lucide-react';
 import { MOCK_FAMILIES, MOCK_TEACHERS, MOCK_MISSIONS, MOCK_REPORTS, MOCK_FINANCIALS } from '../../data/mockCrmData';
-import { Family, Teacher } from '../../types';
+import { Family, Teacher, PipelineStatus } from '../../types';
 
 interface CrmDashboardProps {
     onLogout: () => void;
@@ -85,7 +86,7 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex font-sans">
+    <div className="min-h-screen bg-gray-50 flex font-sans overflow-hidden">
       {/* Sidebar */}
       <aside className="w-64 bg-navy-900 text-white flex flex-col fixed h-full z-20 shadow-2xl">
         <div className="p-6 border-b border-navy-800">
@@ -99,7 +100,7 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
         <nav className="flex-grow p-4 space-y-2">
             <SidebarItem icon={<LayoutDashboard size={20}/>} label="Vue d'ensemble" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
             <div className="pt-6 pb-2 text-[10px] font-bold text-navy-500 uppercase tracking-widest px-3">Pôles</div>
-            <SidebarItem icon={<Users size={20}/>} label="Commercial" active={activeTab === 'commercial'} onClick={() => setActiveTab('commercial')} />
+            <SidebarItem icon={<Users size={20}/>} label="Pipeline Commercial" active={activeTab === 'commercial'} onClick={() => setActiveTab('commercial')} />
             <SidebarItem icon={<GraduationCap size={20}/>} label="RH Professeurs" active={activeTab === 'recrutement'} onClick={() => setActiveTab('recrutement')} />
             <SidebarItem icon={<Network size={20}/>} label="Matching" active={activeTab === 'matching'} onClick={() => setActiveTab('matching')} />
             <SidebarItem icon={<FileCheck size={20}/>} label="Suivi Pédagogique" active={activeTab === 'suivi'} onClick={() => setActiveTab('suivi')} />
@@ -114,11 +115,13 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 p-8 overflow-y-auto">
+      <main className="flex-1 ml-64 p-8 h-screen overflow-y-auto bg-gray-100 flex flex-col">
          {/* Global Header & Search */}
-         <div className="flex justify-between items-center mb-10 relative">
+         <div className="flex justify-between items-center mb-6 relative shrink-0">
              <h1 className="text-3xl font-bold text-navy-900 font-serif capitalize tracking-tight">
-                 {activeTab === 'dashboard' ? 'Tableau de Bord' : activeTab.replace('-', ' ')}
+                 {activeTab === 'dashboard' ? 'Tableau de Bord' : 
+                  activeTab === 'commercial' ? 'Pipeline Familles' : 
+                  activeTab.replace('-', ' ')}
              </h1>
              
              <div className="flex items-center gap-6 relative z-30">
@@ -129,21 +132,17 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
                         type="text" 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Rechercher (Nom, Tél, Mail...)" 
-                        className="pl-10 pr-4 py-2.5 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-navy-900 focus:border-transparent w-80 bg-white shadow-sm transition-all" 
+                        placeholder="Rechercher..." 
+                        className="pl-10 pr-4 py-2.5 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-navy-900 focus:border-transparent w-64 bg-white shadow-sm transition-all" 
                      />
                      
                      {/* Search Results Dropdown */}
                      {searchResults && (
-                         <div className="absolute top-full right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2">
+                         <div className="absolute top-full right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 z-50">
                              <div className="p-3 bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wide">
                                  Résultats
                              </div>
                              <div className="max-h-80 overflow-y-auto">
-                                 {searchResults.families.length === 0 && searchResults.teachers.length === 0 && (
-                                     <div className="p-4 text-center text-gray-400 text-sm">Aucun résultat trouvé.</div>
-                                 )}
-                                 
                                  {searchResults.families.length > 0 && (
                                      <div>
                                          <div className="px-4 py-2 text-xs font-bold text-violet-600 bg-violet-50">Familles</div>
@@ -151,18 +150,6 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
                                              <div key={f.id} className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0" onClick={() => { setActiveTab('commercial'); setSearchQuery(''); }}>
                                                  <p className="font-bold text-navy-900 text-sm">{f.name}</p>
                                                  <p className="text-xs text-gray-500">{f.children.join(', ')} • {f.city}</p>
-                                             </div>
-                                         ))}
-                                     </div>
-                                 )}
-
-                                 {searchResults.teachers.length > 0 && (
-                                     <div>
-                                         <div className="px-4 py-2 text-xs font-bold text-blue-600 bg-blue-50">Professeurs</div>
-                                         {searchResults.teachers.map(t => (
-                                             <div key={t.id} className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0" onClick={() => { setActiveTab('recrutement'); setSearchQuery(''); }}>
-                                                 <p className="font-bold text-navy-900 text-sm">{t.name}</p>
-                                                 <p className="text-xs text-gray-500">{t.subjects.join(', ')} • {t.phone}</p>
                                              </div>
                                          ))}
                                      </div>
@@ -187,11 +174,13 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
          </div>
 
          {/* Views */}
-         {activeTab === 'dashboard' && <DashboardView />}
-         {activeTab === 'commercial' && <CommercialView />}
-         {activeTab === 'recrutement' && <RecrutementView />}
-         {activeTab === 'matching' && <MatchingView />}
-         {activeTab === 'suivi' && <SuiviView />}
+         <div className="flex-1 overflow-hidden relative">
+             {activeTab === 'dashboard' && <DashboardView />}
+             {activeTab === 'commercial' && <KanbanBoardView />}
+             {activeTab === 'recrutement' && <div className="overflow-y-auto h-full"><RecrutementView /></div>}
+             {activeTab === 'matching' && <div className="overflow-y-auto h-full"><MatchingView /></div>}
+             {activeTab === 'suivi' && <div className="overflow-y-auto h-full"><SuiviView /></div>}
+         </div>
 
       </main>
     </div>
@@ -209,17 +198,265 @@ const SidebarItem = ({ icon, label, active, onClick }: { icon: React.ReactNode, 
     </button>
 );
 
-// --- DASHBOARD VIEW (Redesigned) ---
+// --- KANBAN VIEW (Commercial Replacement) ---
+
+interface KanbanColumnDef {
+    id: PipelineStatus;
+    title: string;
+    color: string;
+    borderColor: string;
+}
+
+const KANBAN_COLUMNS: KanbanColumnDef[] = [
+    { id: 'Nouveau', title: '🆕 Nouveau lead', color: 'bg-blue-50', borderColor: 'border-blue-500' },
+    { id: 'Contact', title: '📞 Prise de contact', color: 'bg-orange-50', borderColor: 'border-orange-500' },
+    { id: 'Devis', title: '📝 Devis envoyé', color: 'bg-yellow-50', borderColor: 'border-yellow-400' },
+    { id: 'Contrat', title: '📩 Contrat envoyé', color: 'bg-purple-50', borderColor: 'border-purple-500' },
+    { id: 'Gagné', title: '✅ Famille active', color: 'bg-green-50', borderColor: 'border-green-500' },
+    { id: 'Perdu', title: '❌ Perdu', color: 'bg-gray-200', borderColor: 'border-gray-500' },
+    { id: 'Archivé', title: '🗄️ Archivé', color: 'bg-gray-100', borderColor: 'border-gray-300' },
+];
+
+const KanbanBoardView = () => {
+    const [leads, setLeads] = useState<Family[]>(MOCK_FAMILIES);
+    const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
+    const [selectedLead, setSelectedLead] = useState<Family | null>(null);
+
+    const handleDragStart = (e: React.DragEvent, id: string) => {
+        setDraggedLeadId(id);
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+        e.preventDefault(); // Necessary for onDrop to fire
+    };
+
+    const handleDrop = (e: React.DragEvent, status: PipelineStatus) => {
+        e.preventDefault();
+        if (draggedLeadId) {
+            setLeads(prev => prev.map(lead => 
+                lead.id === draggedLeadId ? { ...lead, status: status } : lead
+            ));
+            setDraggedLeadId(null);
+        }
+    };
+
+    return (
+        <div className="h-full flex flex-col relative">
+            <div className="flex gap-4 overflow-x-auto h-full pb-4 px-2 snap-x">
+                {KANBAN_COLUMNS.map(column => (
+                    <div 
+                        key={column.id}
+                        className={`min-w-[300px] w-[300px] flex flex-col rounded-xl bg-gray-50/50 border-t-4 ${column.borderColor} shadow-sm max-h-full`}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, column.id)}
+                    >
+                        {/* Header */}
+                        <div className="p-3 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-lg">
+                            <h3 className="font-bold text-navy-900 text-sm flex items-center gap-2">
+                                {column.title}
+                            </h3>
+                            <span className="bg-gray-100 text-gray-500 text-xs font-bold px-2 py-0.5 rounded-full">
+                                {leads.filter(l => l.status === column.id).length}
+                            </span>
+                        </div>
+
+                        {/* Cards Container */}
+                        <div className="p-2 flex-1 overflow-y-auto space-y-3">
+                            {leads.filter(l => l.status === column.id).map(lead => (
+                                <KanbanCard 
+                                    key={lead.id} 
+                                    lead={lead} 
+                                    onClick={() => setSelectedLead(lead)}
+                                    onDragStart={(e) => handleDragStart(e, lead.id)}
+                                    borderColor={column.borderColor}
+                                    isLost={column.id === 'Perdu'}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Slide Over Panel */}
+            {selectedLead && (
+                <LeadDetailPanel 
+                    lead={selectedLead} 
+                    onClose={() => setSelectedLead(null)} 
+                />
+            )}
+        </div>
+    );
+};
+
+const KanbanCard = ({ lead, onClick, onDragStart, borderColor, isLost }: { 
+    lead: Family, 
+    onClick: () => void, 
+    onDragStart: (e: React.DragEvent) => void,
+    borderColor: string,
+    isLost: boolean
+}) => {
+    // Logic for urgency red dot (mocked: if ID is odd, it's urgent)
+    const isUrgent = parseInt(lead.id) % 2 !== 0 && lead.status !== 'Gagné' && lead.status !== 'Archivé' && lead.status !== 'Perdu';
+
+    return (
+        <div 
+            draggable 
+            onDragStart={onDragStart}
+            onClick={onClick}
+            className={`
+                bg-white p-4 rounded-lg shadow-sm border-l-4 ${borderColor} 
+                cursor-grab active:cursor-grabbing hover:shadow-md transition-all 
+                relative group ${isLost ? 'opacity-60 grayscale' : ''}
+            `}
+        >
+            {isUrgent && (
+                <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-red-500/50 shadow-sm" title="Action requise (> 5j sans nouvelle)"></div>
+            )}
+            
+            <h4 className="font-bold text-navy-900 text-sm mb-1 truncate">{lead.name}</h4>
+            <div className="text-xs text-gray-500 font-medium mb-3 flex items-center gap-1">
+                <GraduationCap size={12} />
+                {lead.children.join(', ')}
+            </div>
+            
+            <div className="flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-wide">
+                <span>{lead.subjectNeeds || 'Soutien'}</span>
+                {lead.lastContact && <span>{new Date(lead.lastContact).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short'})}</span>}
+            </div>
+        </div>
+    );
+};
+
+// --- SLIDE OVER DETAIL PANEL ---
+
+const LeadDetailPanel = ({ lead, onClose }: { lead: Family, onClose: () => void }) => {
+    const [activeTab, setActiveTab] = useState<'infos' | 'suivi' | 'documents'>('infos');
+
+    return (
+        <div className="absolute inset-y-0 right-0 w-[450px] bg-white shadow-2xl border-l border-gray-200 z-50 flex flex-col animate-in slide-in-from-right duration-300">
+            {/* Header */}
+            <div className="p-6 border-b border-gray-100 bg-navy-900 text-white flex justify-between items-start">
+                <div>
+                    <h2 className="text-xl font-serif font-bold">{lead.name}</h2>
+                    <p className="text-navy-300 text-sm mt-1 flex items-center gap-2">
+                        <MapPin size={14} /> {lead.city}
+                    </p>
+                </div>
+                <button onClick={onClose} className="text-navy-400 hover:text-white transition-colors">
+                    <X size={24} />
+                </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200">
+                <button onClick={() => setActiveTab('infos')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'infos' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>Infos</button>
+                <button onClick={() => setActiveTab('suivi')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'suivi' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>Suivi</button>
+                <button onClick={() => setActiveTab('documents')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'documents' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>Documents</button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
+                {activeTab === 'infos' && (
+                    <div className="space-y-6">
+                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Coordonnées</h3>
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><Phone size={16} /></div>
+                                    <p className="font-bold text-navy-900">{lead.phone}</p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><Mail size={16} /></div>
+                                    <p className="font-bold text-navy-900 text-sm">{lead.email}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Besoin identifié</h3>
+                            <div className="space-y-2">
+                                <p className="text-sm"><span className="font-semibold">Élève(s) :</span> {lead.children.join(', ')}</p>
+                                <p className="text-sm"><span className="font-semibold">Matière :</span> {lead.subjectNeeds}</p>
+                                <p className="text-sm"><span className="font-semibold">Source :</span> {lead.source || 'Non renseigné'}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'suivi' && (
+                    <div className="space-y-4">
+                        <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
+                            <textarea placeholder="Ajouter une note rapide..." className="w-full text-sm resize-none outline-none text-navy-900" rows={3}></textarea>
+                            <div className="flex justify-end mt-2">
+                                <button className="bg-navy-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Ajouter</button>
+                            </div>
+                        </div>
+
+                        <div className="border-l-2 border-gray-200 ml-3 pl-6 space-y-6 py-2">
+                            <div className="relative">
+                                <div className="absolute -left-[31px] bg-orange-100 text-orange-600 p-1 rounded-full border border-white"><Phone size={12} /></div>
+                                <p className="text-sm font-bold text-navy-900">Appel sortant (Répondeur)</p>
+                                <p className="text-xs text-gray-500">Hier à 14h30</p>
+                            </div>
+                            <div className="relative">
+                                <div className="absolute -left-[31px] bg-blue-100 text-blue-600 p-1 rounded-full border border-white"><ArrowRight size={12} /></div>
+                                <p className="text-sm font-bold text-navy-900">Lead créé</p>
+                                <p className="text-xs text-gray-500">Le {lead.lastContact}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'documents' && (
+                    <div className="space-y-4">
+                        <button className="w-full bg-white border border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center text-gray-500 hover:border-gold-500 hover:text-gold-600 hover:bg-gold-50 transition-all">
+                            <PenTool size={24} className="mb-2" />
+                            <span className="font-bold">Générer un Devis</span>
+                        </button>
+                        
+                        {lead.status === 'Devis' || lead.status === 'Contrat' || lead.status === 'Gagné' ? (
+                            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-red-50 text-red-600 p-2 rounded-lg"><FileIcon size={20} /></div>
+                                    <div>
+                                        <p className="font-bold text-sm text-navy-900">Devis #{lead.id}001.pdf</p>
+                                        <p className="text-xs text-gray-500">Créé le 24/10/2025</p>
+                                    </div>
+                                </div>
+                                <button className="text-navy-400 hover:text-navy-900"><MoreHorizontal size={20}/></button>
+                            </div>
+                        ) : null}
+
+                         <button className="w-full bg-white border border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center text-gray-500 hover:border-violet-500 hover:text-violet-600 hover:bg-violet-50 transition-all">
+                            <FileCheck size={24} className="mb-2" />
+                            <span className="font-bold">Générer Contrat</span>
+                        </button>
+                    </div>
+                )}
+            </div>
+            
+            {/* Footer Actions */}
+            <div className="p-4 border-t border-gray-200 bg-white">
+                <button className="w-full bg-gold-500 hover:bg-gold-600 text-navy-900 py-3 rounded-xl font-bold transition-colors shadow-lg">
+                    Action Suivante
+                </button>
+            </div>
+        </div>
+    );
+};
+
+// --- EXISTING DASHBOARD VIEW (Unchanged mainly, just rendering) ---
 
 const DashboardView = () => {
     // Generate derived tasks based on mock data
-    const leadsToContact = MOCK_FAMILIES.filter(f => f.status === 'Lead').length;
-    const renewalNeeded = MOCK_FAMILIES.filter(f => f.status === 'Client' && f.remainingHours < 4).length;
+    const leadsToContact = MOCK_FAMILIES.filter(f => f.status === 'Nouveau' || f.status === 'Contact').length;
+    const renewalNeeded = MOCK_FAMILIES.filter(f => f.status === 'Gagné' && f.remainingHours < 4).length;
     const pendingMatching = MOCK_MISSIONS.filter(m => m.status === 'En recherche').length;
     const candidates = MOCK_TEACHERS.filter(t => t.status === 'Candidat').length;
     
     return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full overflow-y-auto pb-20">
         
         {/* KPI Section - Row 1: Humans */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -227,7 +464,7 @@ const DashboardView = () => {
                 icon={<Users className="text-white" />} 
                 iconBg="bg-violet-600"
                 title="Familles Actives" 
-                value={MOCK_FAMILIES.filter(f => f.status === 'Client').length} 
+                value={MOCK_FAMILIES.filter(f => f.status === 'Gagné').length} 
                 subtext="En suivi"
             />
             <StatCard 
@@ -282,13 +519,13 @@ const DashboardView = () => {
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 
                 {/* Leads */}
-                {MOCK_FAMILIES.filter(f => f.status === 'Lead').map(f => (
+                {MOCK_FAMILIES.filter(f => f.status === 'Nouveau').map(f => (
                     <TaskItem 
                         key={'lead-'+f.id}
                         type="lead"
-                        title={`Lead : ${f.name}`}
+                        title={`Nouveau Lead : ${f.name}`}
                         subtitle={`Reçu le ${f.lastContact} • ${f.city}`}
-                        actionLabel="Appeler"
+                        actionLabel="Traiter"
                     />
                 ))}
 
@@ -304,7 +541,7 @@ const DashboardView = () => {
                 ))}
 
                 {/* Renewals */}
-                {MOCK_FAMILIES.filter(f => f.status === 'Client' && f.remainingHours < 4).map(f => (
+                {MOCK_FAMILIES.filter(f => f.status === 'Gagné' && f.remainingHours < 4).map(f => (
                         <TaskItem 
                         key={'renew-'+f.id}
                         type="renew"
@@ -314,7 +551,7 @@ const DashboardView = () => {
                     />
                 ))}
 
-                {/* Candidates (Implicitly based on mock logic or hardcoded example for visual) */}
+                {/* Candidates */}
                  {MOCK_TEACHERS.filter(t => t.status === 'Candidat').map(t => (
                     <TaskItem 
                         key={'candidat-'+t.id}
@@ -324,15 +561,6 @@ const DashboardView = () => {
                         actionLabel="Auditer"
                     />
                 ))}
-
-                {/* Hardcoded Satisfaction Survey Example */}
-                    <TaskItem 
-                    type="survey"
-                    title="Enquête Satisfaction"
-                    subtitle="Famille Bernard (1er cours)"
-                    actionLabel="Envoyer"
-                />
-
             </div>
         </div>
     </div>
@@ -340,6 +568,21 @@ const DashboardView = () => {
 };
 
 // --- Custom Components for Dashboard ---
+
+const StatCard = ({ icon, iconBg, title, value, subtext }: any) => {
+    return (
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1">
+            <div className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-lg shadow-gray-200 ${iconBg}`}>
+                {icon}
+            </div>
+            <div>
+                <p className="text-sm font-bold text-gray-400 uppercase tracking-wide">{title}</p>
+                <p className="text-2xl font-extrabold text-navy-900">{value}</p>
+                <p className="text-xs text-gray-500 font-medium">{subtext}</p>
+            </div>
+        </div>
+    );
+};
 
 const RevenueCard = ({ title, signed, pipe, objective, isYearly = false }: any) => {
     const signedPercent = Math.min((signed / objective) * 100, 100);
@@ -447,58 +690,10 @@ const TaskItem = ({ type, title, subtitle, actionLabel }: any) => {
     );
 }
 
-// --- STANDARD VIEWS (Kept similar but styled) ---
-
-const CommercialView = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-            <h3 className="font-bold text-navy-900">Familles & Prospects</h3>
-            <button className="flex items-center gap-2 bg-navy-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-navy-800">
-                <PlusCircle size={16} /> Ajouter
-            </button>
-        </div>
-        <table className="w-full text-left">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-semibold">
-                <tr>
-                    <th className="px-6 py-4">Famille</th>
-                    <th className="px-6 py-4">Ville</th>
-                    <th className="px-6 py-4">Enfants</th>
-                    <th className="px-6 py-4">Statut</th>
-                    <th className="px-6 py-4">Solde H.</th>
-                    <th className="px-6 py-4">Action</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-                {MOCK_FAMILIES.map(f => (
-                    <tr key={f.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                            <p className="font-bold text-navy-900">{f.name}</p>
-                            <p className="text-xs text-gray-500">{f.email}</p>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{f.city}</td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{f.children.join(', ')}</td>
-                        <td className="px-6 py-4">
-                            <StatusBadge status={f.status} />
-                        </td>
-                         <td className="px-6 py-4">
-                            {f.status === 'Client' && (
-                                <span className={`text-xs font-bold px-2 py-1 rounded ${f.remainingHours < 5 ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'}`}>
-                                    {f.remainingHours} h
-                                </span>
-                            )}
-                        </td>
-                        <td className="px-6 py-4">
-                            <button className="text-violet-600 hover:underline text-sm font-semibold">Détails</button>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    </div>
-);
+// --- STANDARD VIEWS (Recrutement, Matching, Suivi - Keeping standard layout) ---
 
 const RecrutementView = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden m-1">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
             <h3 className="font-bold text-navy-900">Vivier Professeurs</h3>
             <button className="flex items-center gap-2 bg-navy-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-navy-800">
@@ -543,7 +738,7 @@ const MatchingView = () => {
     const pendingMissions = MOCK_MISSIONS.filter(m => m.status === 'En recherche' || m.status === 'Proposition');
     
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 m-1">
             <div className="space-y-4">
                 <h3 className="font-bold text-navy-900 mb-2 flex items-center gap-2">
                     <Search size={20} className="text-violet-600" />
@@ -576,7 +771,7 @@ const MatchingView = () => {
 };
 
 const SuiviView = () => (
-    <div className="space-y-6">
+    <div className="space-y-6 m-1">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-100">
                 <h3 className="font-bold text-navy-900">Rapports de séances à valider</h3>
@@ -615,30 +810,15 @@ const SuiviView = () => (
     </div>
 );
 
-
-// --- Helpers ---
-const StatCard = ({ icon, iconBg, title, value, subtext }: any) => (
-    <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-36">
-        <div className="flex justify-between items-start">
-            <div className={`p-3 rounded-xl shadow-md ${iconBg}`}>{icon}</div>
-        </div>
-        <div>
-            <h3 className="text-3xl font-extrabold text-navy-900 mt-2">{value}</h3>
-            <div className="flex justify-between items-end">
-                <p className="text-gray-500 text-xs font-bold uppercase tracking-wider">{title}</p>
-                <span className="text-green-600 text-xs font-bold bg-green-50 px-2 py-0.5 rounded-full">{subtext}</span>
-            </div>
-        </div>
-    </div>
-);
-
 const StatusBadge = ({ status }: { status: string }) => {
     let styles = "bg-gray-100 text-gray-600";
     switch (status) {
-        case 'Client': case 'Actif': case 'Validée': case 'Validé': styles = "bg-green-100 text-green-700 border border-green-200"; break;
-        case 'Lead': case 'En recherche': case 'Proposition': styles = "bg-blue-100 text-blue-700 border border-blue-200"; break;
-        case 'Candidat': case 'En attente': styles = "bg-orange-100 text-orange-700 border border-orange-200"; break;
-        case 'Ancien': case 'Inactif': styles = "bg-gray-100 text-gray-500 border border-gray-200"; break;
+        case 'Client': case 'Actif': case 'Validée': case 'Validé': case 'Gagné': styles = "bg-green-100 text-green-700 border border-green-200"; break;
+        case 'Lead': case 'En recherche': case 'Proposition': case 'Nouveau': styles = "bg-blue-100 text-blue-700 border border-blue-200"; break;
+        case 'Candidat': case 'En attente': case 'Contact': styles = "bg-orange-100 text-orange-700 border border-orange-200"; break;
+        case 'Ancien': case 'Inactif': case 'Perdu': styles = "bg-gray-100 text-gray-500 border border-gray-200"; break;
+        case 'Devis': styles = "bg-yellow-100 text-yellow-700 border border-yellow-200"; break;
+        case 'Contrat': styles = "bg-purple-100 text-purple-700 border border-purple-200"; break;
     }
     return <span className={`px-3 py-1 rounded-full text-xs font-bold ${styles}`}>{status}</span>;
 };

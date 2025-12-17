@@ -34,16 +34,29 @@ export interface Review {
 }
 
 // CRM Types
+
+// Nouveaux statuts pour le Kanban
+export type PipelineStatus = 
+  | 'Nouveau' 
+  | 'Contact' 
+  | 'Devis' 
+  | 'Contrat' 
+  | 'Gagné' 
+  | 'Perdu' 
+  | 'Archivé';
+
 export interface Family {
   id: string;
   name: string;
   email: string;
   phone: string;
   city: string;
-  status: 'Lead' | 'Client' | 'Ancien';
+  status: PipelineStatus; // Updated status type
   children: string[];
   lastContact: string;
   remainingHours: number; // Pour le renouvellement
+  subjectNeeds?: string; // Pour l'affichage carte
+  source?: string; // Pour le détail
 }
 
 export interface Teacher {

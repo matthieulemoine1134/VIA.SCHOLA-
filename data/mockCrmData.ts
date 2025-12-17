@@ -2,11 +2,97 @@
 import { Family, Teacher, Mission, Report, FinancialStats } from '../types';
 
 export const MOCK_FAMILIES: Family[] = [
-  { id: '1', name: 'Famille Dupont', email: 'dupont@email.com', phone: '06 12 34 56 78', city: 'Narbonne', status: 'Client', children: ['Léa (3ème)', 'Tom (CM2)'], lastContact: '2023-10-05', remainingHours: 12 },
-  { id: '2', name: 'Famille Martin', email: 'martin@email.com', phone: '06 98 76 54 32', city: 'Sigean', status: 'Lead', children: ['Lucas (Terminale)'], lastContact: '2023-10-12', remainingHours: 0 },
-  { id: '3', name: 'Famille Bernard', email: 'bernard@email.com', phone: '06 11 22 33 44', city: 'Gruissan', status: 'Client', children: ['Emma (1ère)'], lastContact: '2023-09-28', remainingHours: 2 }, // A renouveler
-  { id: '4', name: 'Famille Petit', email: 'petit@email.com', phone: '06 55 44 33 22', city: 'Narbonne', status: 'Ancien', children: ['Hugo (Bac+1)'], lastContact: '2023-06-15', remainingHours: 0 },
-  { id: '5', name: 'Famille Garcia', email: 'garcia@email.com', phone: '06 77 88 99 00', city: 'Coursan', status: 'Lead', children: ['Sofia (Seconde)'], lastContact: '2023-10-14', remainingHours: 0 },
+  { 
+    id: '1', 
+    name: 'Famille Dupont', 
+    email: 'dupont@email.com', 
+    phone: '06 12 34 56 78', 
+    city: 'Narbonne', 
+    status: 'Gagné', // Client Actif
+    children: ['Léa (3ème)'], 
+    subjectNeeds: 'Maths & Physique',
+    lastContact: '2023-10-05', 
+    remainingHours: 12,
+    source: 'Site Web'
+  },
+  { 
+    id: '2', 
+    name: 'Famille Martin', 
+    email: 'martin@email.com', 
+    phone: '06 98 76 54 32', 
+    city: 'Sigean', 
+    status: 'Nouveau', // Lead entrant
+    children: ['Lucas (Terminale)'], 
+    subjectNeeds: 'Grand Oral',
+    lastContact: '2023-10-24', // Recent
+    remainingHours: 0,
+    source: 'Recommandation'
+  },
+  { 
+    id: '3', 
+    name: 'Famille Bernard', 
+    email: 'bernard@email.com', 
+    phone: '06 11 22 33 44', 
+    city: 'Gruissan', 
+    status: 'Contact', // Prise de contact faite
+    children: ['Emma (1ère)'], 
+    subjectNeeds: 'Français',
+    lastContact: '2023-09-28', // Ancien -> Devrait avoir une alerte rouge
+    remainingHours: 0,
+    source: 'Google Maps'
+  }, 
+  { 
+    id: '4', 
+    name: 'Famille Petit', 
+    email: 'petit@email.com', 
+    phone: '06 55 44 33 22', 
+    city: 'Narbonne', 
+    status: 'Archivé', 
+    children: ['Hugo (Bac+1)'], 
+    subjectNeeds: 'Anglais',
+    lastContact: '2023-06-15', 
+    remainingHours: 0,
+    source: 'Site Web'
+  },
+  { 
+    id: '5', 
+    name: 'Famille Garcia', 
+    email: 'garcia@email.com', 
+    phone: '06 77 88 99 00', 
+    city: 'Coursan', 
+    status: 'Devis', // Devis envoyé
+    children: ['Sofia (Seconde)'], 
+    subjectNeeds: 'Aide aux devoirs',
+    lastContact: '2023-10-14', 
+    remainingHours: 0,
+    source: 'Flyer Boulangerie'
+  },
+  { 
+    id: '6', 
+    name: 'Famille Rousseau', 
+    email: 'rousseau@email.com', 
+    phone: '06 00 11 22 33', 
+    city: 'Vinassan', 
+    status: 'Contrat', // En attente signature
+    children: ['Arthur (4ème)'], 
+    subjectNeeds: 'Mathématiques',
+    lastContact: '2023-10-20', 
+    remainingHours: 0,
+    source: 'Site Web'
+  },
+  { 
+    id: '7', 
+    name: 'Famille Morel', 
+    email: 'morel@email.com', 
+    phone: '07 88 99 66 55', 
+    city: 'Narbonne', 
+    status: 'Perdu', 
+    children: ['Chloé (CM2)'], 
+    subjectNeeds: 'Français',
+    lastContact: '2023-09-10', 
+    remainingHours: 0,
+    source: 'Inconnu'
+  },
 ];
 
 export const MOCK_TEACHERS: Teacher[] = [
