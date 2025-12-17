@@ -113,3 +113,31 @@ export interface FinancialStats {
     objective: number; // YTD Objective or Total Annual Objective
   }
 }
+
+// --- SETTINGS TYPES ---
+
+export interface PricingRule {
+    id: string;
+    level: string; // Collège, Lycée, Supérieur
+    basePrice: number; // Prix de vente horaire
+}
+
+export interface GeographicZone {
+    id: string;
+    name: string; // Narbonne, Grand Narbonne, Hors Zone
+    supplement: number; // Supplément par heure ou forfait
+}
+
+export interface SalaryRule {
+    id: string;
+    qualification: string; // Bac+3, Certifié, Agrégé
+    hourlyWageBrut: number; // Salaire brut horaire
+    hourlyWageNet: number; // Salaire net estimé
+}
+
+export interface DocumentTemplate {
+    id: string;
+    name: string;
+    type: 'Devis' | 'Contrat Famille' | 'Contrat Travail' | 'Facture';
+    lastUpdated: string;
+}

@@ -6,34 +6,52 @@ import {
   PlusCircle, UserCheck, Calendar, Briefcase, ChevronRight, LogOut,
   Phone, Mail, Target, ArrowRight, BatteryWarning, UserPlus, FileText,
   MapPin, MoreHorizontal, FileText as FileIcon, X, PenTool, Euro,
-  PhoneOutgoing, History, Save, Send, RefreshCw
+  PhoneOutgoing, History, Save, Send, RefreshCw, MessageSquare, Edit, Trash, Plus,
+  User, Settings, FileBox, Calculator, Download
 } from 'lucide-react';
-import { MOCK_FAMILIES, MOCK_TEACHERS, MOCK_MISSIONS, MOCK_REPORTS, MOCK_FINANCIALS } from '../../data/mockCrmData';
-import { Family, Teacher, PipelineStatus, Activity } from '../../types';
+import { 
+    MOCK_FAMILIES, MOCK_TEACHERS, MOCK_MISSIONS, MOCK_REPORTS, MOCK_FINANCIALS,
+    MOCK_PRICING, MOCK_ZONES, MOCK_SALARIES, MOCK_DOCUMENTS 
+} from '../../data/mockCrmData';
+import { Family, Teacher, PipelineStatus, Activity, PricingRule, GeographicZone, SalaryRule, DocumentTemplate } from '../../types';
 
 interface CrmDashboardProps {
     onLogout: () => void;
+    initialLeads?: Family[];
 }
 
-type CrmTab = 'dashboard' | 'commercial' | 'recrutement' | 'matching' | 'suivi' | 'admin';
+type CrmTab = 'dashboard' | 'commercial' | 'recrutement' | 'matching' | 'suivi' | 'admin' | 'settings';
 type FamilyFilter = 'all' | 'prospects' | 'active' | 'archived';
 
 const AVERAGE_BASKET = 600; // Panier moyen par défaut pour les prospects
 
-const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
+const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout, initialLeads }) => {
   const [activeTab, setActiveTab] = useState<CrmTab>('dashboard');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   
+  // Selection State (Global for Search & Kanban)
+  const [selectedFamily, setSelectedFamily] = useState<Family | null>(null);
+
+  // Use props leads or fallback to mock
+  const [leads, setLeads] = useState<Family[]>(initialLeads || MOCK_FAMILIES);
+
+  // Sync leads if initialLeads changes (e.g. new lead added from public site)
+  useEffect(() => {
+    if (initialLeads) {
+        setLeads(initialLeads);
+    }
+  }, [initialLeads]);
+
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{families: Family[], teachers: Teacher[]} | null>(null);
 
-  // Search Logic
+  // Search Logic (updated to use live 'leads' instead of MOCK_FAMILIES)
   useEffect(() => {
     if (searchQuery.length > 2) {
       const lowerQ = searchQuery.toLowerCase();
-      const families = MOCK_FAMILIES.filter(f => 
+      const families = leads.filter(f => 
         f.name.toLowerCase().includes(lowerQ) || 
         f.email.toLowerCase().includes(lowerQ) || 
         f.phone.replace(/\s/g, '').includes(lowerQ.replace(/\s/g, '')) ||
@@ -48,7 +66,7 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
     } else {
       setSearchResults(null);
     }
-  }, [searchQuery]);
+  }, [searchQuery, leads]);
 
   const handleLogin = (e: React.FormEvent) => {
       e.preventDefault();
@@ -57,6 +75,12 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
       } else {
           alert('Mot de passe incorrect (Indice: admin)');
       }
+  };
+
+  const handleSearchResultClick = (family: Family) => {
+      setSelectedFamily(family);
+      setSearchQuery('');
+      setSearchResults(null);
   };
 
   if (!isAuthenticated) {
@@ -110,7 +134,8 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
             <SidebarItem icon={<FileCheck size={20}/>} label="Suivi Pédagogique" active={activeTab === 'suivi'} onClick={() => setActiveTab('suivi')} />
         </nav>
 
-        <div className="p-4 border-t border-navy-800 bg-navy-950">
+        <div className="p-4 border-t border-navy-800 bg-navy-950 space-y-2">
+             <SidebarItem icon={<Settings size={20}/>} label="Paramètres" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
              <button onClick={onLogout} className="flex items-center gap-3 px-3 py-2 text-navy-400 hover:text-red-400 transition-colors w-full text-sm font-medium">
                  <LogOut size={18} />
                  <span>Déconnexion</span>
@@ -125,6 +150,7 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
              <h1 className="text-3xl font-bold text-navy-900 font-serif capitalize tracking-tight">
                  {activeTab === 'dashboard' ? 'Tableau de Bord' : 
                   activeTab === 'commercial' ? 'Gestion Familles' : 
+                  activeTab === 'settings' ? 'Paramètres & Configuration' :
                   activeTab.replace('-', ' ')}
              </h1>
              
@@ -151,7 +177,7 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
                                      <div>
                                          <div className="px-4 py-2 text-xs font-bold text-violet-600 bg-violet-50">Familles</div>
                                          {searchResults.families.map(f => (
-                                             <div key={f.id} className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0" onClick={() => { setActiveTab('commercial'); setSearchQuery(''); }}>
+                                             <div key={f.id} className="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-50 last:border-0" onClick={() => handleSearchResultClick(f)}>
                                                  <p className="font-bold text-navy-900 text-sm">{f.name}</p>
                                                  <p className="text-xs text-gray-500">{f.children.join(', ')} • {f.city}</p>
                                              </div>
@@ -179,18 +205,34 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
 
          {/* Views */}
          <div className="flex-1 overflow-hidden relative">
-             {activeTab === 'dashboard' && <DashboardView />}
-             {activeTab === 'commercial' && <KanbanBoardView />}
+             {activeTab === 'dashboard' && <DashboardView leads={leads} />}
+             {activeTab === 'commercial' && <KanbanBoardView leads={leads} setLeads={setLeads} onLeadClick={setSelectedFamily} />}
              {activeTab === 'recrutement' && <div className="overflow-y-auto h-full"><RecrutementView /></div>}
              {activeTab === 'matching' && <div className="overflow-y-auto h-full"><MatchingView /></div>}
              {activeTab === 'suivi' && <div className="overflow-y-auto h-full"><SuiviView /></div>}
+             {activeTab === 'settings' && <div className="overflow-y-auto h-full"><SettingsView /></div>}
          </div>
+
+         {/* Global Lead Detail Panel (Overlay) */}
+         {selectedFamily && (
+            <LeadDetailPanel 
+                lead={selectedFamily} 
+                onClose={() => setSelectedFamily(null)} 
+                onUpdate={(updatedLead) => {
+                    // Update the local state
+                    setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
+                    // Update selected family to show changes immediately
+                    setSelectedFamily(updatedLead);
+                }}
+            />
+         )}
 
       </main>
     </div>
   );
 };
 
+// ... (Existing SidebarItem, LeadDetailPanel, KanbanBoardView components...)
 const SidebarItem = ({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) => (
     <button 
         onClick={onClick}
@@ -201,6 +243,245 @@ const SidebarItem = ({ icon, label, active, onClick }: { icon: React.ReactNode, 
         {active && <ChevronRight size={14} className="ml-auto opacity-50" />}
     </button>
 );
+
+// --- NEW SETTINGS VIEW ---
+const SettingsView = () => {
+    // State for inputs (initialized with Mocks)
+    const [prices, setPrices] = useState<PricingRule[]>(MOCK_PRICING);
+    const [zones, setZones] = useState<GeographicZone[]>(MOCK_ZONES);
+    const [salaries, setSalaries] = useState<SalaryRule[]>(MOCK_SALARIES);
+    const [documents, setDocuments] = useState<DocumentTemplate[]>(MOCK_DOCUMENTS);
+    const [mileageAllowance, setMileageAllowance] = useState(0.40); // 40cts/km
+
+    // State for Margin Calculator
+    const [selectedLevel, setSelectedLevel] = useState(prices[1].level); // Collège default
+    const [selectedQualif, setSelectedQualif] = useState(salaries[0].qualification); // Bac+3 default
+    const [selectedZone, setSelectedZone] = useState(zones[0].name);
+
+    // Helpers to update state
+    const updatePrice = (id: string, newVal: number) => {
+        setPrices(prev => prev.map(p => p.id === id ? { ...p, basePrice: newVal } : p));
+    };
+
+    const updateSalary = (id: string, field: 'hourlyWageBrut' | 'hourlyWageNet', newVal: number) => {
+        setSalaries(prev => prev.map(s => s.id === id ? { ...s, [field]: newVal } : s));
+    };
+
+    // Calculate Margin for Simulator
+    const currentPriceObj = prices.find(p => p.level === selectedLevel) || prices[0];
+    const currentZoneObj = zones.find(z => z.name === selectedZone) || zones[0];
+    const currentSalaryObj = salaries.find(s => s.qualification === selectedQualif) || salaries[0];
+
+    const totalPrice = currentPriceObj.basePrice + currentZoneObj.supplement;
+    // Coût employeur estimé (Brut * 1.45 pour charges patronales approx)
+    const employerCost = currentSalaryObj.hourlyWageBrut * 1.45; 
+    const margin = totalPrice - employerCost;
+    const marginPercent = ((margin / totalPrice) * 100).toFixed(1);
+
+    return (
+        <div className="p-6 pb-20 space-y-8 animate-in fade-in slide-in-from-bottom-4">
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* 1. FACTURATION FAMILLE */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h3 className="text-xl font-bold font-serif text-navy-900 mb-6 flex items-center gap-2">
+                        <Euro className="text-violet-600" /> Facturation Famille
+                    </h3>
+
+                    {/* Base Prices */}
+                    <div className="mb-6">
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Prix de vente (Horaire)</h4>
+                        <div className="space-y-3">
+                            {prices.map(price => (
+                                <div key={price.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                    <span className="font-bold text-navy-900">{price.level}</span>
+                                    <div className="flex items-center gap-2">
+                                        <input 
+                                            type="number" 
+                                            value={price.basePrice} 
+                                            onChange={(e) => updatePrice(price.id, Number(e.target.value))}
+                                            className="w-20 p-1 text-right font-bold text-navy-900 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none"
+                                        />
+                                        <span className="text-sm text-gray-500">€/h</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Zones */}
+                    <div>
+                        <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Suppléments Géographiques</h4>
+                        <div className="space-y-3">
+                            {zones.map(zone => (
+                                <div key={zone.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                    <span className="font-medium text-navy-700">{zone.name}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-gray-400 font-bold">+</span>
+                                        <input 
+                                            type="number" 
+                                            defaultValue={zone.supplement} 
+                                            className="w-16 p-1 text-right font-bold text-navy-900 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none"
+                                        />
+                                        <span className="text-sm text-gray-500">€</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. RÉMUNÉRATION ENSEIGNANTS */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h3 className="text-xl font-bold font-serif text-navy-900 mb-6 flex items-center gap-2">
+                        <Briefcase className="text-blue-600" /> Salaires Enseignants
+                    </h3>
+
+                    <div className="space-y-4 mb-6">
+                        <div className="grid grid-cols-12 gap-2 text-xs font-bold text-gray-400 uppercase tracking-wide px-2">
+                            <div className="col-span-6">Niveau</div>
+                            <div className="col-span-3 text-right">Brut/h</div>
+                            <div className="col-span-3 text-right">Net/h (Est.)</div>
+                        </div>
+                        {salaries.map(salary => (
+                            <div key={salary.id} className="grid grid-cols-12 gap-2 items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                <div className="col-span-6 font-bold text-navy-900 text-sm">{salary.qualification}</div>
+                                <div className="col-span-3 flex justify-end">
+                                    <input 
+                                        type="number" 
+                                        value={salary.hourlyWageBrut} 
+                                        onChange={(e) => updateSalary(salary.id, 'hourlyWageBrut', Number(e.target.value))}
+                                        className="w-16 p-1 text-right font-bold text-navy-900 bg-white border border-gray-200 rounded-lg outline-none focus:border-blue-500"
+                                    />
+                                </div>
+                                <div className="col-span-3 flex justify-end">
+                                     <input 
+                                        type="number" 
+                                        value={salary.hourlyWageNet} 
+                                        onChange={(e) => updateSalary(salary.id, 'hourlyWageNet', Number(e.target.value))}
+                                        className="w-16 p-1 text-right font-bold text-green-600 bg-white border border-gray-200 rounded-lg outline-none focus:border-green-500"
+                                    />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="bg-blue-50 p-4 rounded-xl flex justify-between items-center border border-blue-100">
+                        <div>
+                            <p className="font-bold text-navy-900 text-sm">Indemnités Kilométriques</p>
+                            <p className="text-xs text-blue-600">Barème URSSAF 2024</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="number" 
+                                step="0.01"
+                                value={mileageAllowance} 
+                                onChange={(e) => setMileageAllowance(Number(e.target.value))}
+                                className="w-20 p-2 text-right font-bold text-navy-900 bg-white border border-blue-200 rounded-lg outline-none"
+                            />
+                            <span className="font-bold text-navy-700">€/km</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. SIMULATEUR DE MARGE */}
+                <div className="bg-navy-900 text-white rounded-2xl shadow-xl p-6 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-gold-500 opacity-10 rounded-full blur-[60px] pointer-events-none"></div>
+                    
+                    <h3 className="text-xl font-bold font-serif mb-6 flex items-center gap-2 relative z-10">
+                        <Calculator className="text-gold-500" /> Analyse de Rentabilité
+                    </h3>
+
+                    <div className="grid grid-cols-3 gap-4 mb-6 relative z-10">
+                        <div>
+                            <label className="text-xs text-navy-300 uppercase font-bold block mb-1">Niveau</label>
+                            <select 
+                                value={selectedLevel} 
+                                onChange={(e) => setSelectedLevel(e.target.value)}
+                                className="w-full bg-navy-800 border border-navy-700 text-white rounded-lg p-2 text-sm outline-none"
+                            >
+                                {prices.map(p => <option key={p.id} value={p.level}>{p.level}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                             <label className="text-xs text-navy-300 uppercase font-bold block mb-1">Zone</label>
+                            <select 
+                                value={selectedZone} 
+                                onChange={(e) => setSelectedZone(e.target.value)}
+                                className="w-full bg-navy-800 border border-navy-700 text-white rounded-lg p-2 text-sm outline-none"
+                            >
+                                {zones.map(z => <option key={z.id} value={z.name}>{z.name}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                             <label className="text-xs text-navy-300 uppercase font-bold block mb-1">Professeur</label>
+                            <select 
+                                value={selectedQualif} 
+                                onChange={(e) => setSelectedQualif(e.target.value)}
+                                className="w-full bg-navy-800 border border-navy-700 text-white rounded-lg p-2 text-sm outline-none"
+                            >
+                                {salaries.map(s => <option key={s.id} value={s.qualification}>{s.qualification}</option>)}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="bg-navy-800/50 rounded-xl p-4 border border-navy-700 space-y-3 relative z-10">
+                        <div className="flex justify-between text-sm">
+                            <span className="text-navy-200">Facturation Client</span>
+                            <span className="font-bold text-white">{totalPrice.toFixed(2)} €</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-navy-200">Coût Salarial Chargé (x1.45)</span>
+                            <span className="font-bold text-red-300">- {employerCost.toFixed(2)} €</span>
+                        </div>
+                        <div className="h-px bg-navy-700 my-2"></div>
+                        <div className="flex justify-between items-center">
+                            <span className="font-bold text-gold-500">Marge Brute</span>
+                            <div className="text-right">
+                                <span className="block text-2xl font-bold text-white">{margin.toFixed(2)} €</span>
+                                <span className={`text-xs font-bold ${Number(marginPercent) > 30 ? 'text-green-400' : 'text-orange-400'}`}>
+                                    {marginPercent}%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 4. DOCUMENTS BRUTS */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                    <h3 className="text-xl font-bold font-serif text-navy-900 mb-6 flex items-center gap-2">
+                        <FileBox className="text-orange-500" /> Documents & Modèles
+                    </h3>
+                    
+                    <div className="space-y-3">
+                        {documents.map(doc => (
+                            <div key={doc.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-orange-200 transition-colors group cursor-pointer">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-white p-2 rounded-lg border border-gray-200 text-gray-500">
+                                        <FileText size={20} />
+                                    </div>
+                                    <div>
+                                        <p className="font-bold text-sm text-navy-900 group-hover:text-orange-600 transition-colors">{doc.name}</p>
+                                        <p className="text-xs text-gray-500">{doc.type} • Mis à jour le {doc.lastUpdated}</p>
+                                    </div>
+                                </div>
+                                <button className="text-gray-400 hover:text-navy-900 p-2">
+                                    <Download size={18} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                    
+                    <button className="w-full mt-6 border border-dashed border-gray-300 text-gray-500 rounded-xl py-3 text-sm font-bold hover:bg-gray-50 hover:text-navy-900 hover:border-navy-300 transition-all flex items-center justify-center gap-2">
+                        <Plus size={16} /> Ajouter un nouveau modèle
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// ... (Rest of existing KanbanCard, KanbanCardProps, LeadDetailPanel...)
 
 // --- KANBAN VIEW (Commercial Replacement) ---
 
@@ -222,10 +503,17 @@ const ALL_KANBAN_COLUMNS: KanbanColumnDef[] = [
     { id: 'Archivé', title: '🗄️ Archivé', color: 'bg-gray-100', borderColor: 'border-gray-300' },
 ];
 
-const KanbanBoardView = () => {
-    const [leads, setLeads] = useState<Family[]>(MOCK_FAMILIES);
+interface KanbanBoardViewProps {
+    onLeadClick: (lead: Family) => void;
+    leads: Family[];
+    setLeads: React.Dispatch<React.SetStateAction<Family[]>>;
+}
+
+const KanbanBoardView: React.FC<KanbanBoardViewProps> = ({ onLeadClick, leads, setLeads }) => {
+    // We use the passed leads state instead of local mock initialization
+    // const [leads, setLeads] = useState<Family[]>(MOCK_FAMILIES); <--- Removed
+    
     const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
-    const [selectedLead, setSelectedLead] = useState<Family | null>(null);
     const [familyFilter, setFamilyFilter] = useState<FamilyFilter>('all');
     
     // Lost Modal Logic
@@ -265,12 +553,6 @@ const KanbanBoardView = () => {
                 setIsLostModalOpen(true);
                 return;
             }
-
-            if (status === 'Gagné') {
-               // Could trigger a "Success" animation or Client Form here
-               // For now just update
-            }
-
             updateLeadStatus(draggedLeadId, status);
             setDraggedLeadId(null);
         }
@@ -337,7 +619,6 @@ const KanbanBoardView = () => {
             <div className="flex gap-4 overflow-x-auto h-full pb-4 px-2 snap-x">
                 {getColumns().map(column => {
                     const columnLeads = leads.filter(l => l.status === column.id);
-                    // Value Calculation Logic based on Status
                     const totalValue = columnLeads.reduce((sum, lead) => {
                         if (lead.status === 'Nouveau' || lead.status === 'Contact') return sum + AVERAGE_BASKET;
                         return sum + (lead.potentialValue || 0);
@@ -378,7 +659,7 @@ const KanbanBoardView = () => {
                                 <KanbanCard 
                                     key={lead.id} 
                                     lead={lead} 
-                                    onClick={() => setSelectedLead(lead)}
+                                    onClick={() => onLeadClick(lead)}
                                     onDragStart={(e) => handleDragStart(e, lead.id)}
                                     borderColor={column.borderColor}
                                     isLost={column.id === 'Perdu'}
@@ -388,15 +669,6 @@ const KanbanBoardView = () => {
                     </div>
                 )})}
             </div>
-
-            {/* Slide Over Panel */}
-            {selectedLead && (
-                <LeadDetailPanel 
-                    lead={selectedLead} 
-                    onClose={() => setSelectedLead(null)} 
-                    onUpdate={(updatedLead) => setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l))}
-                />
-            )}
 
             {/* Lost Reason Modal */}
             {isLostModalOpen && (
@@ -429,13 +701,15 @@ const KanbanBoardView = () => {
     );
 };
 
-const KanbanCard = ({ lead, onClick, onDragStart, borderColor, isLost }: { 
-    lead: Family, 
-    onClick: () => void, 
-    onDragStart: (e: React.DragEvent) => void,
-    borderColor: string,
-    isLost: boolean
-}) => {
+interface KanbanCardProps {
+    lead: Family;
+    onClick: () => void;
+    onDragStart: (e: React.DragEvent) => void;
+    borderColor: string;
+    isLost: boolean;
+}
+
+const KanbanCard: React.FC<KanbanCardProps> = ({ lead, onClick, onDragStart, borderColor, isLost }) => {
     // Calculate Urgency
     const daysSinceLastContact = Math.floor((new Date().getTime() - new Date(lead.lastContact).getTime()) / (1000 * 3600 * 24));
     let urgencyColor = 'bg-green-500';
@@ -514,16 +788,103 @@ const KanbanCard = ({ lead, onClick, onDragStart, borderColor, isLost }: {
     );
 };
 
-// --- SLIDE OVER DETAIL PANEL ---
+// --- SLIDE OVER DETAIL PANEL (ENRICHED) ---
 
 const LeadDetailPanel = ({ lead, onClose, onUpdate }: { lead: Family, onClose: () => void, onUpdate: (l: Family) => void }) => {
     const [activeTab, setActiveTab] = useState<'infos' | 'suivi' | 'documents'>('infos');
+    const [isEditing, setIsEditing] = useState(false);
     const [note, setNote] = useState('');
     
+    // Retrieve linked missions (Contracts)
+    const familyMissions = MOCK_MISSIONS.filter(m => m.familyId === lead.id);
+
+    // Edit Form State
+    const [editedLead, setEditedLead] = useState<Family>(lead);
+    const [newStudentName, setNewStudentName] = useState('');
+    const [newStudentClass, setNewStudentClass] = useState('');
+
     // Quote Generator State
     const [quoteRate, setQuoteRate] = useState(25);
     const [quoteHours, setQuoteHours] = useState(10);
     const [showQuoteSuccess, setShowQuoteSuccess] = useState(false);
+    const [showActionSuccess, setShowActionSuccess] = useState<string | null>(null);
+
+    // Helper to update lead status
+    const updateLeadStatus = (id: string, status: PipelineStatus) => {
+        const newActivity: Activity = {
+           id: Date.now().toString(),
+           type: 'status_change',
+           content: `Déplacé vers ${status} depuis le panneau`,
+           date: new Date().toISOString().split('T')[0],
+           user: 'Vous'
+       };
+       const updatedLead = { ...lead, status: status, activities: [newActivity, ...lead.activities] };
+       onUpdate(updatedLead);
+   };
+
+    // Call Action: No Answer
+    const handleNoAnswer = () => {
+        const newActivity: Activity = {
+            id: Date.now().toString(),
+            type: 'call',
+            content: "Tentative d'appel (Pas de réponse). SMS et Mail de relance envoyés automatiquement.",
+            date: new Date().toISOString().split('T')[0],
+            user: 'Vous'
+        };
+        const updatedLead = { 
+            ...lead, 
+            status: 'Contact' as PipelineStatus, // Moves to Contact if it was Nouveau
+            lastContact: new Date().toISOString().split('T')[0],
+            activities: [newActivity, ...lead.activities] 
+        };
+        onUpdate(updatedLead);
+        setShowActionSuccess("Appel logué & SMS envoyé !");
+        setTimeout(() => setShowActionSuccess(null), 3000);
+    };
+
+    // Call Action: Answered -> Go to Edit Mode
+    const handleAnswered = () => {
+        setIsEditing(true);
+        setActiveTab('infos');
+    };
+
+    const handleSaveDiscovery = () => {
+        // Save the edited info
+        const newActivity: Activity = {
+            id: Date.now().toString(),
+            type: 'status_change',
+            content: "Découverte des besoins effectuée (Fiche mise à jour).",
+            date: new Date().toISOString().split('T')[0],
+            user: 'Vous'
+        };
+        const finalLead = { 
+            ...editedLead, 
+            status: 'Devis' as PipelineStatus, // Move to Devis stage logic implies we know what they want
+            lastContact: new Date().toISOString().split('T')[0],
+            activities: [newActivity, ...editedLead.activities] 
+        };
+        onUpdate(finalLead);
+        setIsEditing(false);
+        setActiveTab('documents'); // Auto switch to Quote generation
+    };
+
+    const handleAddStudent = () => {
+        if (newStudentName && newStudentClass) {
+            setEditedLead(prev => ({
+                ...prev,
+                children: [...prev.children, `${newStudentName} (${newStudentClass})`]
+            }));
+            setNewStudentName('');
+            setNewStudentClass('');
+        }
+    };
+
+    const handleRemoveStudent = (index: number) => {
+        setEditedLead(prev => ({
+            ...prev,
+            children: prev.children.filter((_, i) => i !== index)
+        }));
+    };
 
     const handleAddNote = () => {
         if (!note.trim()) return;
@@ -555,80 +916,294 @@ const LeadDetailPanel = ({ lead, onClose, onUpdate }: { lead: Family, onClose: (
     };
 
     return (
-        <div className="absolute inset-y-0 right-0 w-[500px] bg-white shadow-2xl border-l border-gray-200 z-50 flex flex-col animate-in slide-in-from-right duration-300">
-            {/* Header */}
-            <div className="p-6 border-b border-gray-100 bg-navy-900 text-white flex justify-between items-start">
-                <div>
-                    <h2 className="text-xl font-serif font-bold">{lead.name}</h2>
-                    <p className="text-navy-300 text-sm mt-1 flex items-center gap-2">
-                        <MapPin size={14} /> {lead.city} • <span className="text-gold-400 font-bold">{lead.status}</span>
-                    </p>
+        <div className="absolute inset-y-0 right-0 w-[600px] bg-white shadow-2xl border-l border-gray-200 z-50 flex flex-col animate-in slide-in-from-right duration-300">
+            {/* Header with Call Actions */}
+            <div className="bg-navy-900 text-white p-6 pb-4">
+                <div className="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 className="text-xl font-serif font-bold">{lead.name}</h2>
+                        <p className="text-navy-300 text-sm mt-1 flex items-center gap-2">
+                            <MapPin size={14} /> {lead.city} • <span className="text-gold-400 font-bold">{lead.status}</span>
+                        </p>
+                    </div>
+                    <button onClick={onClose} className="text-navy-400 hover:text-white transition-colors">
+                        <X size={24} />
+                    </button>
                 </div>
-                <button onClick={onClose} className="text-navy-400 hover:text-white transition-colors">
-                    <X size={24} />
-                </button>
+
+                {/* Call Center Actions */}
+                {lead.status !== 'Gagné' && lead.status !== 'Perdu' && !isEditing && (
+                    <div className="bg-navy-800 p-3 rounded-xl border border-navy-700 flex gap-3">
+                         <div className="flex items-center gap-2 text-white/50 text-xs font-bold uppercase tracking-wider px-2">
+                             <Phone size={14} /> Appel
+                         </div>
+                         <button 
+                            onClick={handleNoAnswer}
+                            className="flex-1 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 py-2 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2"
+                         >
+                            <PhoneOutgoing size={14} /> Pas de réponse
+                         </button>
+                         <button 
+                            onClick={handleAnswered}
+                            className="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg text-sm font-bold transition-all shadow-lg flex items-center justify-center gap-2"
+                         >
+                            <CheckCircle size={14} /> A décroché
+                         </button>
+                    </div>
+                )}
+                
+                {/* Notification Toast inside header */}
+                {showActionSuccess && (
+                    <div className="mt-3 bg-green-500/20 border border-green-500/30 text-green-300 text-sm py-2 px-3 rounded-lg flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+                        <CheckCircle size={14} /> {showActionSuccess}
+                    </div>
+                )}
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-gray-200">
-                <button onClick={() => setActiveTab('infos')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'infos' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>Infos</button>
-                <button onClick={() => setActiveTab('suivi')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'suivi' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>Suivi & Timeline</button>
-                <button onClick={() => setActiveTab('documents')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'documents' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>Devis Express</button>
+            <div className="flex border-b border-gray-200 bg-white">
+                <button onClick={() => setActiveTab('infos')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'infos' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>
+                   {isEditing ? 'Mode Découverte ✏️' : 'Infos Famille'}
+                </button>
+                <button onClick={() => setActiveTab('suivi')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'suivi' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>
+                    Suivi
+                </button>
+                <button onClick={() => setActiveTab('documents')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'documents' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>
+                    Devis & Contrats
+                </button>
             </div>
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
                 {activeTab === 'infos' && (
                     <div className="space-y-6">
-                        {/* Actions Rapides */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <a href={`tel:${lead.phone.replace(/ /g, '')}`} className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-green-500/20 transition-all">
-                                <Phone size={18} /> Appeler
-                            </a>
-                            <a href={`mailto:${lead.email}`} className="bg-white border border-gray-200 hover:border-navy-900 text-navy-900 p-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all">
-                                <Mail size={18} /> Email
-                            </a>
-                        </div>
+                        
+                        {/* VIEW MODE */}
+                        {!isEditing && (
+                            <>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <a href={`tel:${lead.phone.replace(/ /g, '')}`} className="bg-white border border-gray-200 hover:border-green-500 hover:text-green-600 text-gray-700 p-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all">
+                                        <Phone size={18} /> Appeler
+                                    </a>
+                                    <a href={`mailto:${lead.email}`} className="bg-white border border-gray-200 hover:border-navy-900 text-navy-900 p-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all">
+                                        <Mail size={18} /> Email
+                                    </a>
+                                </div>
 
-                        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
-                                <UserCheck size={14} /> Coordonnées
-                            </h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <p className="text-xs text-gray-400">Téléphone</p>
-                                    <p className="font-bold text-navy-900 text-lg">{lead.phone}</p>
+                                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm relative group">
+                                    <button onClick={() => setIsEditing(true)} className="absolute top-4 right-4 text-gray-300 hover:text-navy-900">
+                                        <Edit size={16} />
+                                    </button>
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                        <UserCheck size={14} /> Coordonnées
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-xs text-gray-400">Nom complet</p>
+                                                <p className="font-bold text-navy-900">{lead.name}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-400">Ville</p>
+                                                <p className="font-bold text-navy-900">{lead.city}</p>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <p className="text-xs text-gray-400">Téléphone</p>
+                                                <p className="font-bold text-navy-900">{lead.phone}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-gray-400">Email</p>
+                                                <p className="font-bold text-navy-900 truncate">{lead.email}</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-gray-400">Email</p>
-                                    <p className="font-bold text-navy-900">{lead.email}</p>
+
+                                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                        <GraduationCap size={14} /> Élèves & Besoins
+                                    </h3>
+                                    <div className="space-y-3">
+                                        {lead.children.map((child, idx) => (
+                                            <div key={idx} className="flex justify-between items-center border-b border-gray-50 pb-2 last:border-0">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-8 h-8 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-xs font-bold">
+                                                        {child.charAt(0)}
+                                                    </div>
+                                                    <span className="font-bold text-navy-900">{child}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div className="pt-2">
+                                            <p className="text-xs text-gray-400 uppercase mb-1">Matières / Besoin</p>
+                                            <p className="text-sm text-navy-700 bg-gray-50 p-2 rounded-lg">{lead.subjectNeeds}</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-gray-400">Ville</p>
-                                    <p className="font-bold text-navy-900">{lead.city}</p>
+
+                                {/* MISSIONS / CONTRACTS / TEACHERS SECTION */}
+                                <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-2">
+                                            <Briefcase size={14} /> Contrats & Intervenants
+                                        </h3>
+                                        {familyMissions.length > 0 && <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">{familyMissions.length} actif(s)</span>}
+                                    </div>
+                                    
+                                    {familyMissions.length === 0 ? (
+                                        <p className="text-sm text-gray-400 italic">Aucune mission en cours pour le moment.</p>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {familyMissions.map(mission => {
+                                                const assignedTeacher = MOCK_TEACHERS.find(t => t.id === mission.assignedTeacherId);
+                                                return (
+                                                    <div key={mission.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                                        <div className="flex justify-between items-start mb-2">
+                                                            <div>
+                                                                <span className="font-bold text-navy-900 text-sm">{mission.subject}</span>
+                                                                <span className="text-xs text-gray-500 ml-2">({mission.level})</span>
+                                                            </div>
+                                                            <StatusBadge status={mission.status} />
+                                                        </div>
+                                                        
+                                                        {assignedTeacher ? (
+                                                            <div className="flex items-center gap-3 mt-2 pt-2 border-t border-gray-200">
+                                                                <div className="w-8 h-8 rounded-full bg-violet-600 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                                                                    {assignedTeacher.name.charAt(0)}
+                                                                </div>
+                                                                <div>
+                                                                    <p className="text-xs text-gray-400 font-bold uppercase">Professeur Assigné</p>
+                                                                    <p className="text-sm font-bold text-navy-900">{assignedTeacher.name}</p>
+                                                                </div>
+                                                                <button className="ml-auto text-violet-600 hover:text-violet-800 text-xs font-bold">Voir</button>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="mt-2 text-xs text-orange-500 font-bold flex items-center gap-1">
+                                                                <User size={12} /> Recherche intervenant en cours...
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
+
+                        {/* EDIT / DISCOVERY MODE */}
+                        {isEditing && (
+                            <div className="animate-in fade-in slide-in-from-bottom-2 space-y-5">
+                                <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl flex gap-3 items-start">
+                                    <MessageSquare className="text-blue-500 shrink-0 mt-1" size={18} />
+                                    <div>
+                                        <p className="text-blue-800 font-bold text-sm">En ligne avec la famille</p>
+                                        <p className="text-blue-600 text-xs mt-1">Posez les questions de découverte : Classe de l'élève ? Difficultés principales ? Disponibilités ?</p>
+                                    </div>
+                                </div>
+
+                                {/* Contact Edit */}
+                                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Infos Parents</h3>
+                                    <div className="space-y-3">
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="text-xs text-gray-500">Nom</label>
+                                                <input type="text" value={editedLead.name} onChange={e => setEditedLead({...editedLead, name: e.target.value})} className="w-full border rounded p-2 text-sm font-bold text-navy-900" />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-gray-500">Ville</label>
+                                                <input type="text" value={editedLead.city} onChange={e => setEditedLead({...editedLead, city: e.target.value})} className="w-full border rounded p-2 text-sm text-navy-900" />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="text-xs text-gray-500">Tél</label>
+                                                <input type="text" value={editedLead.phone} onChange={e => setEditedLead({...editedLead, phone: e.target.value})} className="w-full border rounded p-2 text-sm text-navy-900" />
+                                            </div>
+                                            <div>
+                                                <label className="text-xs text-gray-500">Email</label>
+                                                <input type="text" value={editedLead.email} onChange={e => setEditedLead({...editedLead, email: e.target.value})} className="w-full border rounded p-2 text-sm text-navy-900" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Students Edit */}
+                                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Élèves</h3>
+                                    
+                                    <div className="space-y-2 mb-4">
+                                        {editedLead.children.map((child, idx) => (
+                                            <div key={idx} className="flex justify-between items-center bg-gray-50 p-2 rounded-lg">
+                                                <span className="text-sm font-bold text-navy-900">{child}</span>
+                                                <button onClick={() => handleRemoveStudent(idx)} className="text-red-400 hover:text-red-600"><Trash size={14}/></button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex gap-2 items-end border-t border-gray-100 pt-3">
+                                        <div className="flex-1">
+                                            <label className="text-xs text-gray-400">Prénom</label>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Ex: Lucas" 
+                                                value={newStudentName}
+                                                onChange={(e) => setNewStudentName(e.target.value)}
+                                                className="w-full border rounded p-2 text-sm" 
+                                            />
+                                        </div>
+                                        <div className="w-1/3">
+                                            <label className="text-xs text-gray-400">Classe</label>
+                                            <select 
+                                                value={newStudentClass}
+                                                onChange={(e) => setNewStudentClass(e.target.value)}
+                                                className="w-full border rounded p-2 text-sm"
+                                            >
+                                                <option value="">-</option>
+                                                <option value="Primaire">Primaire</option>
+                                                <option value="6ème">6ème</option>
+                                                <option value="5ème">5ème</option>
+                                                <option value="4ème">4ème</option>
+                                                <option value="3ème">3ème</option>
+                                                <option value="2nde">2nde</option>
+                                                <option value="1ère">1ère</option>
+                                                <option value="Term">Term</option>
+                                            </select>
+                                        </div>
+                                        <button 
+                                            onClick={handleAddStudent}
+                                            disabled={!newStudentName || !newStudentClass}
+                                            className="bg-navy-100 text-navy-700 p-2 rounded hover:bg-navy-200 disabled:opacity-50"
+                                        >
+                                            <Plus size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Needs Edit */}
+                                <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm">
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Besoins & Matières</h3>
+                                    <textarea 
+                                        value={editedLead.subjectNeeds || ''}
+                                        onChange={(e) => setEditedLead({...editedLead, subjectNeeds: e.target.value})}
+                                        className="w-full border rounded p-3 text-sm h-24 resize-none focus:ring-2 focus:ring-violet-500 outline-none"
+                                        placeholder="Ex: Besoin urgent en Maths pour le Bac. Disponible le mercredi aprem..."
+                                    ></textarea>
+                                </div>
+
+                                <div className="flex gap-3 pt-2">
+                                    <button onClick={() => setIsEditing(false)} className="flex-1 py-3 border border-gray-300 rounded-xl font-bold text-gray-500 hover:bg-gray-50">
+                                        Annuler
+                                    </button>
+                                    <button onClick={handleSaveDiscovery} className="flex-1 py-3 bg-navy-900 text-white rounded-xl font-bold hover:bg-navy-800 shadow-lg">
+                                        Valider la Découverte
+                                    </button>
                                 </div>
                             </div>
-                        </div>
-
-                        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
-                                <Target size={14} /> Besoin Pédagogique
-                            </h3>
-                            <div className="space-y-2">
-                                <div className="flex justify-between border-b border-gray-50 pb-2">
-                                    <span className="text-gray-600 text-sm">Élève(s)</span>
-                                    <span className="font-bold text-navy-900">{lead.children.join(', ')}</span>
-                                </div>
-                                <div className="flex justify-between border-b border-gray-50 pb-2">
-                                    <span className="text-gray-600 text-sm">Matière</span>
-                                    <span className="font-bold text-navy-900">{lead.subjectNeeds}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-gray-600 text-sm">Source</span>
-                                    <span className="font-bold text-violet-600">{lead.source || 'Non renseigné'}</span>
-                                </div>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 )}
 
@@ -696,6 +1271,11 @@ const LeadDetailPanel = ({ lead, onClose, onUpdate }: { lead: Family, onClose: (
                                 <PenTool size={18} className="text-gold-500" /> Générateur Express
                             </h3>
                             
+                            <div className="mb-4 text-sm text-gray-600">
+                                Pour <span className="font-bold text-navy-900">{lead.children.join(', ')}</span><br/>
+                                <span className="italic">{lead.subjectNeeds}</span>
+                            </div>
+
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <label className="text-xs text-gray-500 font-bold uppercase">Tarif Horaire (€)</label>
@@ -755,6 +1335,7 @@ const LeadDetailPanel = ({ lead, onClose, onUpdate }: { lead: Family, onClose: (
             </div>
             
             {/* Footer Actions */}
+            {!isEditing && (
             <div className="p-4 border-t border-gray-200 bg-white flex gap-3">
                  {lead.status !== 'Gagné' && (
                     <button onClick={() => { updateLeadStatus(lead.id, 'Gagné'); onClose(); }} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition-colors shadow-lg">
@@ -765,77 +1346,96 @@ const LeadDetailPanel = ({ lead, onClose, onUpdate }: { lead: Family, onClose: (
                     Action Suivante <ChevronRight size={16} />
                 </button>
             </div>
+            )}
         </div>
     );
-    
-    // Helper to update lead status from within the panel (mock implementation wrapper)
-    function updateLeadStatus(id: string, status: PipelineStatus) {
-         const newActivity: Activity = {
-            id: Date.now().toString(),
-            type: 'status_change',
-            content: `Déplacé vers ${status} depuis le panneau`,
-            date: new Date().toISOString().split('T')[0],
-            user: 'Vous'
-        };
-        const updatedLead = { ...lead, status: status, activities: [newActivity, ...lead.activities] };
-        onUpdate(updatedLead);
-    }
 };
 
-// --- EXISTING DASHBOARD VIEW (Unchanged mainly, just rendering) ---
+const DashboardView = ({ leads }: { leads?: Family[] }) => {
+    // Generate derived tasks based on real-time leads + static mock data for others
+    // We use the passed `leads` for lead calculations, fallback to mock for others if needed.
+    const activeLeads = leads || MOCK_FAMILIES;
 
-const DashboardView = () => {
-    // Generate derived tasks based on mock data
-    const leadsToContact = MOCK_FAMILIES.filter(f => f.status === 'Nouveau' || f.status === 'Contact').length;
-    const renewalNeeded = MOCK_FAMILIES.filter(f => f.status === 'Gagné' && f.remainingHours < 4).length;
-    const pendingMatching = MOCK_MISSIONS.filter(m => m.status === 'En recherche').length;
+    const reportsToValidate = MOCK_REPORTS.filter(r => r.status === 'En attente').length; 
+    const leadsToContact = activeLeads.filter(f => f.status === 'Nouveau' || f.status === 'Contact').length; // Total pipeline active processing
+    const renewalNeeded = activeLeads.filter(f => f.status === 'Gagné' && f.remainingHours < 4).length;
+    const pendingMatching = MOCK_MISSIONS.filter(m => m.status === 'En recherche').length; 
     const candidates = MOCK_TEACHERS.filter(t => t.status === 'Candidat').length;
     
+    // Dynamic Date
+    const currentMonth = new Date().toLocaleString('fr-FR', { month: 'long' });
+    const currentYear = new Date().getFullYear();
+
     return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 h-full overflow-y-auto pb-20">
         
-        {/* KPI Section - Row 1: Humans */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* KPI Section - Operational Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+             {/* 1. Bilans à valider (Pédagogique) */}
+            <StatCard 
+                icon={<FileCheck className="text-white" />} 
+                iconBg="bg-pink-500"
+                title="Bilans à valider" 
+                value={reportsToValidate} 
+                subtext="Rapports en attente"
+            />
+            
+            {/* 2. Matchings en attente (Opérationnel) */}
+             <StatCard 
+                icon={<Network className="text-white" />} 
+                iconBg="bg-orange-500"
+                title="Matchings en attente" 
+                value={pendingMatching} 
+                subtext="Missions à pourvoir"
+            />
+
+            {/* 3. Familles Actives (Portefeuille) */}
             <StatCard 
                 icon={<Users className="text-white" />} 
                 iconBg="bg-violet-600"
                 title="Familles Actives" 
-                value={MOCK_FAMILIES.filter(f => f.status === 'Gagné').length} 
+                value={activeLeads.filter(f => f.status === 'Gagné').length} 
                 subtext="En suivi"
             />
-            <StatCard 
-                icon={<Phone className="text-white" />} 
-                iconBg="bg-orange-500"
-                title="Leads" 
-                value={leadsToContact} 
-                subtext="À contacter"
+
+            {/* 4. Candidats (RH) */}
+             <StatCard 
+                icon={<UserPlus className="text-white" />} 
+                iconBg="bg-blue-400"
+                title="Candidats Profs" 
+                value={candidates} 
+                subtext="Dossiers reçus"
             />
+
+            {/* 5. Profs Actifs (RH) */}
             <StatCard 
                 icon={<GraduationCap className="text-white" />} 
                 iconBg="bg-blue-600"
                 title="Profs Actifs" 
                 value={MOCK_TEACHERS.filter(t => t.status === 'Actif').length} 
-                subtext="Validés"
+                subtext="Disponibles"
             />
-             <StatCard 
-                icon={<FileText className="text-white" />} 
-                iconBg="bg-pink-500"
-                title="Candidats" 
-                value={candidates} 
-                subtext="À auditer"
+
+             {/* 6. Total Pipeline (Commercial) */}
+            <StatCard 
+                icon={<Target className="text-white" />} 
+                iconBg="bg-emerald-500"
+                title="Pipeline Commercial" 
+                value={leadsToContact} 
+                subtext="Prospects en cours"
             />
         </div>
 
         {/* KPI Section - Row 2: Financials */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <RevenueCard 
-                title="CA Mensuel (Octobre)"
+                title={`CA Mensuel (${currentMonth})`}
                 signed={MOCK_FINANCIALS.month.signed}
                 pipe={MOCK_FINANCIALS.month.pipe}
                 objective={MOCK_FINANCIALS.month.objective}
             />
              <RevenueCard 
-                title="CA Annuel (2025)"
+                title={`CA Annuel (${currentYear})`}
                 signed={MOCK_FINANCIALS.year.signed}
                 pipe={MOCK_FINANCIALS.year.pipe}
                 objective={MOCK_FINANCIALS.year.objective}
@@ -855,7 +1455,7 @@ const DashboardView = () => {
             <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 
                 {/* Leads */}
-                {MOCK_FAMILIES.filter(f => f.status === 'Nouveau').map(f => (
+                {activeLeads.filter(f => f.status === 'Nouveau').map(f => (
                     <TaskItem 
                         key={'lead-'+f.id}
                         type="lead"
@@ -877,7 +1477,7 @@ const DashboardView = () => {
                 ))}
 
                 {/* Renewals */}
-                {MOCK_FAMILIES.filter(f => f.status === 'Gagné' && f.remainingHours < 4).map(f => (
+                {activeLeads.filter(f => f.status === 'Gagné' && f.remainingHours < 4).map(f => (
                         <TaskItem 
                         key={'renew-'+f.id}
                         type="renew"
@@ -903,261 +1503,239 @@ const DashboardView = () => {
     );
 };
 
-// --- Custom Components for Dashboard ---
-
-const StatCard = ({ icon, iconBg, title, value, subtext }: any) => {
-    return (
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 transition-transform hover:-translate-y-1">
-            <div className={`w-14 h-14 rounded-xl flex items-center justify-center shadow-lg shadow-gray-200 ${iconBg}`}>
-                {icon}
-            </div>
-            <div>
-                <p className="text-sm font-bold text-gray-400 uppercase tracking-wide">{title}</p>
-                <p className="text-2xl font-extrabold text-navy-900">{value}</p>
-                <p className="text-xs text-gray-500 font-medium">{subtext}</p>
-            </div>
+// ... (Rest of existing subcomponents remain unchanged)
+const RecrutementView = () => (
+    <div className="p-6">
+        <h2 className="text-2xl font-bold font-serif text-navy-900 mb-6">Recrutement & RH</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <table className="w-full text-left">
+                <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                        <th className="p-4 font-bold text-gray-600">Nom</th>
+                        <th className="p-4 font-bold text-gray-600">Matières</th>
+                        <th className="p-4 font-bold text-gray-600">Villes</th>
+                        <th className="p-4 font-bold text-gray-600">Statut</th>
+                        <th className="p-4 font-bold text-gray-600">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {MOCK_TEACHERS.map(teacher => (
+                        <tr key={teacher.id} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="p-4 font-bold text-navy-900">{teacher.name}</td>
+                            <td className="p-4 text-gray-600">{teacher.subjects.join(', ')}</td>
+                            <td className="p-4 text-gray-600">{teacher.cities.join(', ')}</td>
+                            <td className="p-4"><StatusBadge status={teacher.status} /></td>
+                            <td className="p-4">
+                                <button className="text-violet-600 hover:text-violet-800 font-bold text-sm">Voir Profil</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
         </div>
-    );
-};
+    </div>
+);
 
-const RevenueCard = ({ title, signed, pipe, objective, isYearly = false }: any) => {
+const MatchingView = () => (
+    <div className="p-6">
+        <h2 className="text-2xl font-bold font-serif text-navy-900 mb-6">Matching Élèves / Profs</h2>
+        <div className="grid gap-4">
+            {MOCK_MISSIONS.map(mission => (
+                <div key={mission.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <div>
+                        <h3 className="font-bold text-navy-900">{mission.familyName}</h3>
+                        <p className="text-sm text-gray-600">{mission.subject} • {mission.level}</p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <StatusBadge status={mission.status} />
+                        {mission.assignedTeacherId ? (
+                             <span className="text-sm font-bold text-green-600">Assigné: {MOCK_TEACHERS.find(t => t.id === mission.assignedTeacherId)?.name}</span>
+                        ) : (
+                             <button className="bg-navy-900 text-white px-4 py-2 rounded-lg text-sm font-bold">Trouver un prof</button>
+                        )}
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+const SuiviView = () => (
+    <div className="p-6">
+        <h2 className="text-2xl font-bold font-serif text-navy-900 mb-6">Suivi Pédagogique</h2>
+        <div className="space-y-4">
+            {MOCK_REPORTS.map(report => (
+                <div key={report.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                    <div className="flex justify-between mb-2">
+                        <span className="font-bold text-navy-900">{report.studentName}</span>
+                        <span className="text-sm text-gray-500">{report.date}</span>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2">Prof: {report.teacherName}</p>
+                    <div className="bg-gray-50 p-3 rounded-lg text-sm text-navy-800 italic">"{report.content}"</div>
+                    <div className="mt-2 flex justify-end">
+                        <StatusBadge status={report.status} />
+                    </div>
+                </div>
+            ))}
+        </div>
+    </div>
+);
+
+const StatCard = ({ icon, iconBg, title, value, subtext }: { icon: React.ReactNode, iconBg: string, title: string, value: number, subtext: string }) => (
+    <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-start gap-4">
+        <div className={`p-3 rounded-xl ${iconBg} shadow-lg shadow-gray-200`}>
+            {icon}
+        </div>
+        <div>
+            <p className="text-gray-500 text-sm font-medium">{title}</p>
+            <p className="text-2xl font-bold text-navy-900 mt-1">{value}</p>
+            <p className="text-xs text-gray-400 mt-1">{subtext}</p>
+        </div>
+    </div>
+);
+
+const RevenueCard = ({ title, signed, pipe, objective, isYearly }: { title: string, signed: number, pipe: number, objective: number, isYearly?: boolean }) => {
     const signedPercent = Math.min((signed / objective) * 100, 100);
-    const pipePercent = Math.min((pipe / objective) * 100, 100 - signedPercent); // Stack on top
+    const pipePercent = Math.min((pipe / objective) * 100, 100);
 
-    return (
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between">
-            <div className="flex justify-between items-start mb-4">
-                <div className="flex items-center gap-2">
-                    <div className={`p-1.5 rounded-lg ${isYearly ? 'bg-indigo-100 text-indigo-600' : 'bg-green-100 text-green-600'}`}>
-                        <TrendingUp size={18} />
-                    </div>
-                    <span className="text-sm font-bold text-gray-500">{title}</span>
-                </div>
-                <div className="text-right">
-                    <p className="text-xl font-extrabold text-navy-900">{signed.toLocaleString('fr-FR')} €</p>
-                    <p className="text-[10px] text-gray-400 uppercase font-bold">Signé</p>
-                </div>
-            </div>
-
-            {/* Progress Bar Container */}
-            <div className="relative pt-2">
-                <div className="flex justify-between text-xs mb-1 font-medium">
-                    <span className="text-gold-600">En attente (Devis): {pipe.toLocaleString('fr-FR')} €</span>
-                    <span className="text-gray-400">Obj: {objective.toLocaleString('fr-FR')} €</span>
-                </div>
-                
-                <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden flex relative">
-                    {/* Signed Bar */}
-                    <div 
-                        className={`h-full ${isYearly ? 'bg-indigo-500' : 'bg-green-500'} transition-all duration-1000`} 
-                        style={{ width: `${signedPercent}%` }}
-                    ></div>
-                    {/* Pipe Bar */}
-                    <div 
-                        className={`h-full ${isYearly ? 'bg-indigo-300/50' : 'bg-green-300/50'} relative`} 
-                        style={{ width: `${pipePercent}%` }}
-                    >
-                         {/* Striped pattern for pipe */}
-                        <div className="absolute inset-0" style={{ backgroundImage: 'linear-gradient(45deg,rgba(255,255,255,.15) 25%,transparent 25%,transparent 50%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.15) 75%,transparent 75%,transparent)', backgroundSize: '1rem 1rem' }}></div>
-                    </div>
-                </div>
-                
-                {/* Completion Rate */}
-                <div className="mt-2 text-right">
-                     <span className={`text-xs font-bold ${signed + pipe >= objective ? 'text-green-600' : 'text-orange-500'}`}>
-                        {Math.round(((signed + pipe) / objective) * 100)}% de l'objectif
-                     </span>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const TaskItem = ({ type, title, subtitle, actionLabel }: any) => {
-    let icon, colorClass, btnClass;
+    // Calculate temporal progress
+    const now = new Date();
+    let timeProgress = 0;
     
-    switch(type) {
-        case 'lead': 
-            icon = <Phone size={18} />; 
-            colorClass = "bg-blue-50 text-blue-600 border-blue-100";
-            btnClass = "text-blue-600 hover:bg-blue-100";
-            break;
-        case 'match': 
-            icon = <Network size={18} />; 
-            colorClass = "bg-red-50 text-red-600 border-red-100";
-            btnClass = "text-red-600 hover:bg-red-100";
-            break;
-        case 'renew': 
-            icon = <BatteryWarning size={18} />; 
-            colorClass = "bg-orange-50 text-orange-600 border-orange-100";
-            btnClass = "text-orange-600 hover:bg-orange-100";
-            break;
-        case 'candidate': 
-            icon = <UserPlus size={18} />; 
-            colorClass = "bg-pink-50 text-pink-600 border-pink-100";
-            btnClass = "text-pink-600 hover:bg-pink-100";
-            break;
-        case 'survey':
-            icon = <FileCheck size={18} />; 
-            colorClass = "bg-purple-50 text-purple-600 border-purple-100";
-            btnClass = "text-purple-600 hover:bg-purple-100";
-            break;
-        default:
-            icon = <CheckCircle size={18} />;
-            colorClass = "bg-gray-50 text-gray-600";
-            btnClass = "text-gray-600 hover:bg-gray-100";
+    if (isYearly) {
+        const start = new Date(now.getFullYear(), 0, 1);
+        const dayOfYear = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+        timeProgress = (dayOfYear / 365) * 100;
+    } else {
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        timeProgress = (now.getDate() / daysInMonth) * 100;
     }
 
     return (
-        <div className={`flex items-center justify-between p-4 rounded-xl border ${colorClass} transition-transform hover:scale-[1.01] bg-white bg-opacity-40`}>
-            <div className="flex items-center gap-4">
-                <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-sm ${colorClass.split(' ')[1]}`}>
-                    {icon}
-                </div>
-                <div>
-                    <h4 className="font-bold text-navy-900 text-sm truncate max-w-[140px]" title={title}>{title}</h4>
-                    <p className="text-xs text-navy-500 mt-0.5 truncate max-w-[140px]">{subtitle}</p>
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="font-bold text-navy-900 capitalize">{title}</h3>
+                <div className="text-right">
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">Objectif</p>
+                    <p className="font-bold text-navy-900">{objective.toLocaleString()} €</p>
                 </div>
             </div>
-            <button className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wide transition-colors ${btnClass}`}>
+
+            <div className="relative h-4 bg-gray-100 rounded-full overflow-visible mb-4 group">
+                {/* Signed Bar */}
+                <div 
+                    className={`absolute top-0 left-0 h-full rounded-l-full ${isYearly ? 'bg-blue-600' : 'bg-green-500'} transition-all duration-1000`} 
+                    style={{ width: `${signedPercent}%` }}
+                ></div>
+                {/* Pipe Bar */}
+                <div 
+                    className="absolute top-0 h-full bg-gold-400/50 transition-all duration-1000 border-l border-white" 
+                    style={{ left: `${signedPercent}%`, width: `${pipePercent}%` }}
+                ></div>
+                
+                {/* Temporal Progress Marker */}
+                <div 
+                    className="absolute -top-1 -bottom-1 w-0.5 border-l-2 border-dashed border-navy-900 z-20 flex flex-col items-center transition-all duration-1000"
+                    style={{ left: `${timeProgress}%` }}
+                >
+                    <div className="absolute -top-6 bg-navy-900 text-white text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm whitespace-nowrap opacity-100">
+                        Aujourd'hui
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex justify-between text-sm">
+                <div>
+                    <span className={`inline-block w-2 h-2 rounded-full ${isYearly ? 'bg-blue-600' : 'bg-green-500'} mr-2`}></span>
+                    <span className="text-gray-600 font-medium">Signé : {signed.toLocaleString()} €</span>
+                </div>
+                <div>
+                    <span className="inline-block w-2 h-2 rounded-full bg-gold-400 mr-2"></span>
+                    <span className="text-gray-600 font-medium">Pipeline : {pipe.toLocaleString()} €</span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const StatusBadge = ({ status }: { status: string }) => {
+    let colorClass = 'bg-gray-100 text-gray-600';
+
+    switch (status) {
+        // Pipeline / Family Status
+        case 'Gagné':
+        case 'Validé':
+        case 'Validée':
+        case 'Actif':
+            colorClass = 'bg-green-100 text-green-700 border border-green-200';
+            break;
+        case 'Nouveau':
+        case 'Contact':
+            colorClass = 'bg-blue-100 text-blue-700 border border-blue-200';
+            break;
+        case 'Devis':
+        case 'Proposition':
+            colorClass = 'bg-yellow-100 text-yellow-700 border border-yellow-200';
+            break;
+        case 'Contrat':
+            colorClass = 'bg-purple-100 text-purple-700 border border-purple-200';
+            break;
+        case 'À reconduire':
+            colorClass = 'bg-pink-100 text-pink-700 border border-pink-200';
+            break;
+        case 'Perdu':
+        case 'Inactif':
+        case 'Archivé':
+            colorClass = 'bg-gray-100 text-gray-500 border border-gray-200';
+            break;
+        case 'En recherche':
+        case 'En attente':
+        case 'Candidat':
+            colorClass = 'bg-orange-100 text-orange-700 border border-orange-200';
+            break;
+        default:
+            break;
+    }
+
+    return (
+        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${colorClass}`}>
+            {status}
+        </span>
+    );
+};
+
+const TaskItem = ({ type, title, subtitle, actionLabel }: { type: 'lead' | 'match' | 'renew' | 'candidate', title: string, subtitle: string, actionLabel: string }) => {
+    let icon = <UserPlus size={18} />;
+    let colorClass = 'bg-blue-500';
+
+    if (type === 'lead') {
+        icon = <UserPlus size={18} />;
+        colorClass = 'bg-blue-500';
+    } else if (type === 'match') {
+        icon = <Network size={18} />;
+        colorClass = 'bg-orange-500';
+    } else if (type === 'renew') {
+        icon = <RefreshCw size={18} />;
+        colorClass = 'bg-pink-500';
+    } else if (type === 'candidate') {
+        icon = <GraduationCap size={18} />;
+        colorClass = 'bg-violet-500';
+    }
+
+    return (
+        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100 hover:bg-white hover:shadow-md transition-all group">
+            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm ${colorClass}`}>
+                {icon}
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="font-bold text-navy-900 text-sm truncate">{title}</p>
+                <p className="text-xs text-gray-500 truncate">{subtitle}</p>
+            </div>
+            <button className="text-xs font-bold text-navy-600 bg-white border border-gray-200 px-3 py-1.5 rounded-lg group-hover:bg-navy-900 group-hover:text-white transition-colors">
                 {actionLabel}
             </button>
         </div>
     );
-}
-
-// --- STANDARD VIEWS (Recrutement, Matching, Suivi - Keeping standard layout) ---
-
-const RecrutementView = () => (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden m-1">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-            <h3 className="font-bold text-navy-900">Vivier Professeurs</h3>
-            <button className="flex items-center gap-2 bg-navy-900 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-navy-800">
-                <PlusCircle size={16} /> Candidat
-            </button>
-        </div>
-        <table className="w-full text-left">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-500 font-semibold">
-                <tr>
-                    <th className="px-6 py-4">Identité</th>
-                    <th className="px-6 py-4">Matières</th>
-                    <th className="px-6 py-4">Secteur</th>
-                    <th className="px-6 py-4">Statut</th>
-                    <th className="px-6 py-4">Compétences</th>
-                </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-                {MOCK_TEACHERS.map(t => (
-                    <tr key={t.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                            <p className="font-bold text-navy-900">{t.name}</p>
-                            <p className="text-xs text-gray-500">{t.phone}</p>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{t.subjects.join(', ')}</td>
-                        <td className="px-6 py-4 text-sm text-gray-600">{t.cities.join(', ')}</td>
-                        <td className="px-6 py-4">
-                             <StatusBadge status={t.status} />
-                        </td>
-                        <td className="px-6 py-4">
-                            <div className="flex gap-1 flex-wrap">
-                                {t.skills.map(s => <span key={s} className="text-[10px] bg-gray-100 px-2 py-0.5 rounded text-gray-600">{s}</span>)}
-                            </div>
-                        </td>
-                    </tr>
-                ))}
-            </tbody>
-        </table>
-    </div>
-);
-
-const MatchingView = () => {
-    const pendingMissions = MOCK_MISSIONS.filter(m => m.status === 'En recherche' || m.status === 'Proposition');
-    
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 m-1">
-            <div className="space-y-4">
-                <h3 className="font-bold text-navy-900 mb-2 flex items-center gap-2">
-                    <Search size={20} className="text-violet-600" />
-                    Demandes en attente
-                </h3>
-                {pendingMissions.map(mission => (
-                    <div key={mission.id} className="bg-white p-5 rounded-xl border border-l-4 border-l-violet-500 shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
-                        <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-bold text-lg text-navy-900">{mission.familyName}</h4>
-                            <span className="bg-violet-50 text-violet-700 text-xs font-bold px-2 py-1 rounded">{mission.hoursPerWeek}h/sem</span>
-                        </div>
-                        <p className="text-gray-600 mb-4">{mission.subject} • {mission.level}</p>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-400">Demandé il y a 2j</span>
-                            <span className="text-violet-600 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                                Trouver un prof <ChevronRight size={16} />
-                            </span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            <div className="bg-gray-100 rounded-2xl p-6 border border-gray-200 flex flex-col items-center justify-center text-center">
-                <Network size={48} className="text-gray-300 mb-4" />
-                <h3 className="font-bold text-gray-500 text-lg">Sélectionnez une mission</h3>
-                <p className="text-gray-400">L'algorithme de matching vous proposera les meilleurs profs disponibles.</p>
-            </div>
-        </div>
-    );
-};
-
-const SuiviView = () => (
-    <div className="space-y-6 m-1">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-100">
-                <h3 className="font-bold text-navy-900">Rapports de séances à valider</h3>
-            </div>
-            <div className="divide-y divide-gray-100">
-                {MOCK_REPORTS.map(report => (
-                    <div key={report.id} className="p-6 hover:bg-gray-50 transition-colors">
-                        <div className="flex justify-between items-start mb-2">
-                            <div>
-                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">{report.date}</span>
-                                <h4 className="font-bold text-navy-900 text-lg mt-1">{report.teacherName} <span className="text-gray-400 font-normal">pour</span> {report.studentName}</h4>
-                            </div>
-                            {report.status === 'En attente' ? (
-                                <span className="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold">À Valider</span>
-                            ) : (
-                                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">Validé</span>
-                            )}
-                        </div>
-                        <p className="text-gray-600 bg-gray-50 p-4 rounded-lg border border-gray-100 italic">
-                            "{report.content}"
-                        </p>
-                        {report.status === 'En attente' && (
-                            <div className="mt-4 flex gap-3">
-                                <button className="bg-green-500 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-600 flex items-center gap-2">
-                                    <CheckCircle size={16} /> Valider
-                                </button>
-                                <button className="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-bold hover:bg-gray-50">
-                                    Demander correction
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
-        </div>
-    </div>
-);
-
-const StatusBadge = ({ status }: { status: string }) => {
-    let styles = "bg-gray-100 text-gray-600";
-    switch (status) {
-        case 'Client': case 'Actif': case 'Validée': case 'Validé': case 'Gagné': styles = "bg-green-100 text-green-700 border border-green-200"; break;
-        case 'Lead': case 'En recherche': case 'Proposition': case 'Nouveau': styles = "bg-blue-100 text-blue-700 border border-blue-200"; break;
-        case 'Candidat': case 'En attente': case 'Contact': styles = "bg-orange-100 text-orange-700 border border-orange-200"; break;
-        case 'Ancien': case 'Inactif': case 'Perdu': styles = "bg-gray-100 text-gray-500 border border-gray-200"; break;
-        case 'Devis': styles = "bg-yellow-100 text-yellow-700 border border-yellow-200"; break;
-        case 'Contrat': styles = "bg-purple-100 text-purple-700 border border-purple-200"; break;
-        case 'À reconduire': styles = "bg-pink-100 text-pink-700 border border-pink-200"; break;
-    }
-    return <span className={`px-3 py-1 rounded-full text-xs font-bold ${styles}`}>{status}</span>;
 };
 
 export default CrmDashboard;

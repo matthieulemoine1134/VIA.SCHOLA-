@@ -1,5 +1,5 @@
 
-import { Family, Teacher, Mission, Report, FinancialStats } from '../types';
+import { Family, Teacher, Mission, Report, FinancialStats, PricingRule, GeographicZone, SalaryRule, DocumentTemplate } from '../types';
 
 export const MOCK_FAMILIES: Family[] = [
   { 
@@ -170,3 +170,31 @@ export const MOCK_FINANCIALS: FinancialStats = {
     objective: 110000 
   }
 };
+
+// --- SETTINGS MOCK DATA ---
+
+export const MOCK_PRICING: PricingRule[] = [
+    { id: 'p1', level: 'Primaire', basePrice: 38 },
+    { id: 'p2', level: 'Collège', basePrice: 42 },
+    { id: 'p3', level: 'Lycée', basePrice: 46 },
+    { id: 'p4', level: 'Supérieur / Prépa', basePrice: 52 },
+];
+
+export const MOCK_ZONES: GeographicZone[] = [
+    { id: 'z1', name: 'Zone A (Narbonne +5km)', supplement: 0 },
+    { id: 'z2', name: 'Zone B (+15km)', supplement: 4 },
+    { id: 'z3', name: 'Zone C (+30km)', supplement: 8 },
+];
+
+export const MOCK_SALARIES: SalaryRule[] = [
+    { id: 's1', qualification: 'Étudiant (Bac+3)', hourlyWageBrut: 15, hourlyWageNet: 12 },
+    { id: 's2', qualification: 'Professeur Expérimenté', hourlyWageBrut: 20, hourlyWageNet: 16 },
+    { id: 's3', qualification: 'Professeur Certifié/Agrégé', hourlyWageBrut: 28, hourlyWageNet: 22 },
+];
+
+export const MOCK_DOCUMENTS: DocumentTemplate[] = [
+    { id: 'd1', name: 'Modèle de Devis 2025.docx', type: 'Devis', lastUpdated: '01/01/2025' },
+    { id: 'd2', name: 'Contrat Mandat Famille.pdf', type: 'Contrat Famille', lastUpdated: '15/12/2024' },
+    { id: 'd3', name: 'Contrat Travail CDD d\'usage.docx', type: 'Contrat Travail', lastUpdated: '01/01/2025' },
+    { id: 'd4', name: 'Grille Tarifaire Interne.xlsx', type: 'Facture', lastUpdated: '10/01/2025' },
+];

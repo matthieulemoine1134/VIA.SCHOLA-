@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { X, Info, Briefcase } from 'lucide-react';
 import ContactForm from './ContactForm';
@@ -8,9 +9,10 @@ interface ContactModalProps {
   onClose: () => void;
   mode: 'bilan' | 'tarifs' | 'candidature';
   customContent?: { title: string, text: string } | null;
+  onAddLead?: (data: any) => void;
 }
 
-const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, mode, customContent }) => {
+const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, mode, customContent, onAddLead }) => {
   if (!isOpen) return null;
 
   const getTitle = () => {
@@ -89,7 +91,7 @@ const ContactModal: React.FC<ContactModalProps> = ({ isOpen, onClose, mode, cust
             {mode === 'candidature' ? (
               <CandidatureForm onSuccess={onClose} />
             ) : (
-              <ContactForm onSuccess={onClose} />
+              <ContactForm onSuccess={onClose} onAddLead={onAddLead} />
             )}
         </div>
       </div>

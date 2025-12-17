@@ -9,13 +9,17 @@ import AiAdvisor from './components/AiAdvisor';
 import ContactModal from './components/ContactModal';
 import ConstructionPage from './components/ConstructionPage';
 import CrmDashboard from './components/crm/CrmDashboard';
-import { PageView } from './types';
+import { PageView, Family, Activity } from './types';
+import { MOCK_FAMILIES } from './data/mockCrmData';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'bilan' | 'tarifs' | 'candidature'>('bilan');
   const [modalContent, setModalContent] = useState<{title: string, text: string} | null>(null);
   const [currentView, setCurrentView] = useState<PageView>('home');
+
+  // Centralized State for CRM Leads
+  const [crmLeads, setCrmLeads] = useState<Family[]>(MOCK_FAMILIES);
 
   const handleOpenModal = (mode: 'bilan' | 'tarifs' | 'candidature') => {
     setModalMode(mode);
@@ -32,6 +36,34 @@ function App() {
   const handleNavigate = (view: PageView) => {
     setCurrentView(view);
     window.scrollTo(0, 0);
+  };
+
+  // Function to add a new lead from the public form
+  const handleAddLead = (formData: any) => {
+      const newLead: Family = {
+          id: Date.now().toString(),
+          name: formData.parentName,
+          email: formData.email,
+          phone: formData.phone,
+          city: 'Narbonne (Web)', // Default location for web leads
+          status: 'Nouveau',
+          children: [formData.studentClass || 'Élève'],
+          subjectNeeds: `${formData.subject || 'Soutien général'} - ${formData.details || ''}`.trim(),
+          lastContact: new Date().toISOString().split('T')[0],
+          remainingHours: 0,
+          source: 'Formulaire Site',
+          potentialValue: 600, // Default basket value
+          activities: [
+              {
+                  id: Date.now().toString(),
+                  type: 'status_change',
+                  content: 'Nouveau lead entrant depuis le site web',
+                  date: new Date().toISOString().split('T')[0],
+                  user: 'Système'
+              }
+          ]
+      };
+      setCrmLeads(prev => [newLead, ...prev]);
   };
 
   return (
@@ -65,7 +97,10 @@ function App() {
             )}
 
             {currentView === 'admin' && (
-              <CrmDashboard onLogout={() => handleNavigate('home')} />
+              <CrmDashboard 
+                initialLeads={crmLeads} 
+                onLogout={() => handleNavigate('home')} 
+              />
             )}
             
             {currentView !== 'admin' && <AiAdvisor />}
@@ -76,6 +111,7 @@ function App() {
             mode={modalMode} 
             customContent={modalContent}
             onClose={() => setIsModalOpen(false)} 
+            onAddLead={handleAddLead}
         />
     </>
   );
