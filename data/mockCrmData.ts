@@ -8,12 +8,17 @@ export const MOCK_FAMILIES: Family[] = [
     email: 'dupont@email.com', 
     phone: '06 12 34 56 78', 
     city: 'Narbonne', 
-    status: 'Gagné', // Client Actif
+    status: 'Gagné', 
     children: ['Léa (3ème)'], 
     subjectNeeds: 'Maths & Physique',
-    lastContact: '2023-10-05', 
+    lastContact: '2023-10-25', 
     remainingHours: 12,
-    source: 'Site Web'
+    source: 'Site Web',
+    potentialValue: 1200,
+    activities: [
+      { id: 'a1', type: 'status_change', content: 'Passé en Gagné', date: '2023-10-05', user: 'Matthieu' },
+      { id: 'a2', type: 'call', content: 'Bilan effectué, très positif.', date: '2023-10-01', user: 'Matthieu' }
+    ]
   },
   { 
     id: '2', 
@@ -21,12 +26,16 @@ export const MOCK_FAMILIES: Family[] = [
     email: 'martin@email.com', 
     phone: '06 98 76 54 32', 
     city: 'Sigean', 
-    status: 'Nouveau', // Lead entrant
+    status: 'Nouveau', 
     children: ['Lucas (Terminale)'], 
     subjectNeeds: 'Grand Oral',
-    lastContact: '2023-10-24', // Recent
+    lastContact: new Date().toISOString().split('T')[0], // Aujourd'hui
     remainingHours: 0,
-    source: 'Recommandation'
+    source: 'Recommandation',
+    potentialValue: 0, // Sera calculé par défaut (panier moyen)
+    activities: [
+      { id: 'a3', type: 'status_change', content: 'Lead créé depuis le site', date: new Date().toISOString().split('T')[0], user: 'Système' }
+    ]
   },
   { 
     id: '3', 
@@ -34,12 +43,16 @@ export const MOCK_FAMILIES: Family[] = [
     email: 'bernard@email.com', 
     phone: '06 11 22 33 44', 
     city: 'Gruissan', 
-    status: 'Contact', // Prise de contact faite
+    status: 'Contact', 
     children: ['Emma (1ère)'], 
     subjectNeeds: 'Français',
-    lastContact: '2023-09-28', // Ancien -> Devrait avoir une alerte rouge
+    lastContact: '2023-10-15', // > 5 jours -> Urgence Rouge
     remainingHours: 0,
-    source: 'Google Maps'
+    source: 'Google Maps',
+    potentialValue: 0, // Sera calculé par défaut
+    activities: [
+      { id: 'a4', type: 'call', content: 'Message vocal laissé.', date: '2023-10-15', user: 'Matthieu' }
+    ]
   }, 
   { 
     id: '4', 
@@ -52,7 +65,9 @@ export const MOCK_FAMILIES: Family[] = [
     subjectNeeds: 'Anglais',
     lastContact: '2023-06-15', 
     remainingHours: 0,
-    source: 'Site Web'
+    source: 'Site Web',
+    potentialValue: 500,
+    activities: []
   },
   { 
     id: '5', 
@@ -60,12 +75,17 @@ export const MOCK_FAMILIES: Family[] = [
     email: 'garcia@email.com', 
     phone: '06 77 88 99 00', 
     city: 'Coursan', 
-    status: 'Devis', // Devis envoyé
+    status: 'Devis', 
     children: ['Sofia (Seconde)'], 
     subjectNeeds: 'Aide aux devoirs',
-    lastContact: '2023-10-14', 
+    lastContact: '2023-10-22', 
     remainingHours: 0,
-    source: 'Flyer Boulangerie'
+    source: 'Flyer Boulangerie',
+    potentialValue: 1500,
+    activities: [
+      { id: 'a5', type: 'quote', content: 'Devis #2023-156 envoyé (30h)', date: '2023-10-22', user: 'Matthieu' },
+      { id: 'a6', type: 'meeting', content: 'RDV Bilan à domicile', date: '2023-10-20', user: 'Matthieu' }
+    ]
   },
   { 
     id: '6', 
@@ -73,12 +93,16 @@ export const MOCK_FAMILIES: Family[] = [
     email: 'rousseau@email.com', 
     phone: '06 00 11 22 33', 
     city: 'Vinassan', 
-    status: 'Contrat', // En attente signature
+    status: 'Contrat', 
     children: ['Arthur (4ème)'], 
     subjectNeeds: 'Mathématiques',
-    lastContact: '2023-10-20', 
+    lastContact: '2023-10-24', 
     remainingHours: 0,
-    source: 'Site Web'
+    source: 'Site Web',
+    potentialValue: 950,
+    activities: [
+        { id: 'a7', type: 'status_change', content: 'Devis validé par SMS', date: '2023-10-24', user: 'Matthieu' }
+    ]
   },
   { 
     id: '7', 
@@ -91,7 +115,28 @@ export const MOCK_FAMILIES: Family[] = [
     subjectNeeds: 'Français',
     lastContact: '2023-09-10', 
     remainingHours: 0,
-    source: 'Inconnu'
+    source: 'Inconnu',
+    potentialValue: 600,
+    activities: [
+        { id: 'a8', type: 'note', content: 'A choisi un concurrent moins cher', date: '2023-09-10', user: 'Matthieu' }
+    ]
+  },
+  { 
+    id: '8', 
+    name: 'Famille Leroy', 
+    email: 'leroy@email.com', 
+    phone: '06 55 55 55 55', 
+    city: 'Sigean', 
+    status: 'À reconduire', 
+    children: ['Tom (5ème)'], 
+    subjectNeeds: 'Anglais',
+    lastContact: '2023-10-26', 
+    remainingHours: 0,
+    source: 'Ancien Client',
+    potentialValue: 850, // Montant ancien contrat
+    activities: [
+        { id: 'a9', type: 'note', content: 'Fin du carnet de 20h. À relancer pour renouvellement.', date: '2023-10-26', user: 'Système' }
+    ]
   },
 ];
 
@@ -116,12 +161,12 @@ export const MOCK_REPORTS: Report[] = [
 export const MOCK_FINANCIALS: FinancialStats = {
   month: {
     signed: 4200,
-    pipe: 2450, // Pipe is equivalent to pending contracts, same for month/year view
+    pipe: 2450, 
     objective: 5500
   },
   year: {
     signed: 84000,
-    pipe: 2450, // Pipe is equivalent to pending contracts, same for month/year view
-    objective: 110000 // Objectif YTD ou annuel global
+    pipe: 2450, 
+    objective: 110000 
   }
 };

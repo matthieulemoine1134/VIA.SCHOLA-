@@ -5,16 +5,20 @@ import {
   Search, CheckCircle, Clock, AlertCircle, TrendingUp, DollarSign,
   PlusCircle, UserCheck, Calendar, Briefcase, ChevronRight, LogOut,
   Phone, Mail, Target, ArrowRight, BatteryWarning, UserPlus, FileText,
-  MapPin, MoreHorizontal, FileText as FileIcon, X, PenTool
+  MapPin, MoreHorizontal, FileText as FileIcon, X, PenTool, Euro,
+  PhoneOutgoing, History, Save, Send, RefreshCw
 } from 'lucide-react';
 import { MOCK_FAMILIES, MOCK_TEACHERS, MOCK_MISSIONS, MOCK_REPORTS, MOCK_FINANCIALS } from '../../data/mockCrmData';
-import { Family, Teacher, PipelineStatus } from '../../types';
+import { Family, Teacher, PipelineStatus, Activity } from '../../types';
 
 interface CrmDashboardProps {
     onLogout: () => void;
 }
 
 type CrmTab = 'dashboard' | 'commercial' | 'recrutement' | 'matching' | 'suivi' | 'admin';
+type FamilyFilter = 'all' | 'prospects' | 'active' | 'archived';
+
+const AVERAGE_BASKET = 600; // Panier moyen par défaut pour les prospects
 
 const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
   const [activeTab, setActiveTab] = useState<CrmTab>('dashboard');
@@ -100,7 +104,7 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
         <nav className="flex-grow p-4 space-y-2">
             <SidebarItem icon={<LayoutDashboard size={20}/>} label="Vue d'ensemble" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
             <div className="pt-6 pb-2 text-[10px] font-bold text-navy-500 uppercase tracking-widest px-3">Pôles</div>
-            <SidebarItem icon={<Users size={20}/>} label="Pipeline Commercial" active={activeTab === 'commercial'} onClick={() => setActiveTab('commercial')} />
+            <SidebarItem icon={<Users size={20}/>} label="Familles" active={activeTab === 'commercial'} onClick={() => setActiveTab('commercial')} />
             <SidebarItem icon={<GraduationCap size={20}/>} label="RH Professeurs" active={activeTab === 'recrutement'} onClick={() => setActiveTab('recrutement')} />
             <SidebarItem icon={<Network size={20}/>} label="Matching" active={activeTab === 'matching'} onClick={() => setActiveTab('matching')} />
             <SidebarItem icon={<FileCheck size={20}/>} label="Suivi Pédagogique" active={activeTab === 'suivi'} onClick={() => setActiveTab('suivi')} />
@@ -120,7 +124,7 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
          <div className="flex justify-between items-center mb-6 relative shrink-0">
              <h1 className="text-3xl font-bold text-navy-900 font-serif capitalize tracking-tight">
                  {activeTab === 'dashboard' ? 'Tableau de Bord' : 
-                  activeTab === 'commercial' ? 'Pipeline Familles' : 
+                  activeTab === 'commercial' ? 'Gestion Familles' : 
                   activeTab.replace('-', ' ')}
              </h1>
              
@@ -132,8 +136,8 @@ const CrmDashboard: React.FC<CrmDashboardProps> = ({ onLogout }) => {
                         type="text" 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Rechercher..." 
-                        className="pl-10 pr-4 py-2.5 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-navy-900 focus:border-transparent w-64 bg-white shadow-sm transition-all" 
+                        placeholder="Rechercher (Nom, Tél...)" 
+                        className="pl-10 pr-4 py-2.5 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-navy-900 focus:border-transparent w-80 bg-white shadow-sm transition-all" 
                      />
                      
                      {/* Search Results Dropdown */}
@@ -207,12 +211,13 @@ interface KanbanColumnDef {
     borderColor: string;
 }
 
-const KANBAN_COLUMNS: KanbanColumnDef[] = [
+const ALL_KANBAN_COLUMNS: KanbanColumnDef[] = [
     { id: 'Nouveau', title: '🆕 Nouveau lead', color: 'bg-blue-50', borderColor: 'border-blue-500' },
     { id: 'Contact', title: '📞 Prise de contact', color: 'bg-orange-50', borderColor: 'border-orange-500' },
     { id: 'Devis', title: '📝 Devis envoyé', color: 'bg-yellow-50', borderColor: 'border-yellow-400' },
     { id: 'Contrat', title: '📩 Contrat envoyé', color: 'bg-purple-50', borderColor: 'border-purple-500' },
     { id: 'Gagné', title: '✅ Famille active', color: 'bg-green-50', borderColor: 'border-green-500' },
+    { id: 'À reconduire', title: '🔄 À reconduire', color: 'bg-pink-50', borderColor: 'border-pink-500' },
     { id: 'Perdu', title: '❌ Perdu', color: 'bg-gray-200', borderColor: 'border-gray-500' },
     { id: 'Archivé', title: '🗄️ Archivé', color: 'bg-gray-100', borderColor: 'border-gray-300' },
 ];
@@ -221,6 +226,26 @@ const KanbanBoardView = () => {
     const [leads, setLeads] = useState<Family[]>(MOCK_FAMILIES);
     const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
     const [selectedLead, setSelectedLead] = useState<Family | null>(null);
+    const [familyFilter, setFamilyFilter] = useState<FamilyFilter>('all');
+    
+    // Lost Modal Logic
+    const [isLostModalOpen, setIsLostModalOpen] = useState(false);
+    const [pendingLostLeadId, setPendingLostLeadId] = useState<string | null>(null);
+    const [lostReason, setLostReason] = useState('');
+
+    // Filtered Columns Logic
+    const getColumns = () => {
+        switch(familyFilter) {
+            case 'prospects': 
+                return ALL_KANBAN_COLUMNS.filter(c => ['Nouveau', 'Contact', 'Devis', 'Contrat'].includes(c.id));
+            case 'active':
+                return ALL_KANBAN_COLUMNS.filter(c => ['Gagné', 'À reconduire'].includes(c.id));
+            case 'archived':
+                return ALL_KANBAN_COLUMNS.filter(c => ['Perdu', 'Archivé'].includes(c.id));
+            default:
+                return ALL_KANBAN_COLUMNS;
+        }
+    };
 
     const handleDragStart = (e: React.DragEvent, id: string) => {
         setDraggedLeadId(id);
@@ -228,23 +253,97 @@ const KanbanBoardView = () => {
     };
 
     const handleDragOver = (e: React.DragEvent) => {
-        e.preventDefault(); // Necessary for onDrop to fire
+        e.preventDefault(); 
     };
 
     const handleDrop = (e: React.DragEvent, status: PipelineStatus) => {
         e.preventDefault();
         if (draggedLeadId) {
-            setLeads(prev => prev.map(lead => 
-                lead.id === draggedLeadId ? { ...lead, status: status } : lead
-            ));
+            // Smart Drop Logic
+            if (status === 'Perdu') {
+                setPendingLostLeadId(draggedLeadId);
+                setIsLostModalOpen(true);
+                return;
+            }
+
+            if (status === 'Gagné') {
+               // Could trigger a "Success" animation or Client Form here
+               // For now just update
+            }
+
+            updateLeadStatus(draggedLeadId, status);
             setDraggedLeadId(null);
+        }
+    };
+
+    const updateLeadStatus = (id: string, status: PipelineStatus, reason?: string) => {
+        setLeads(prev => prev.map(lead => {
+            if (lead.id === id) {
+                const newActivities: Activity[] = [
+                    { 
+                        id: Date.now().toString(), 
+                        type: 'status_change', 
+                        content: `Déplacé vers ${status}${reason ? `: ${reason}` : ''}`, 
+                        date: new Date().toISOString().split('T')[0], 
+                        user: 'Vous' 
+                    },
+                    ...lead.activities
+                ];
+                return { ...lead, status: status, activities: newActivities };
+            }
+            return lead;
+        }));
+    };
+
+    const confirmLost = () => {
+        if (pendingLostLeadId) {
+            updateLeadStatus(pendingLostLeadId, 'Perdu', lostReason);
+            setIsLostModalOpen(false);
+            setPendingLostLeadId(null);
+            setLostReason('');
         }
     };
 
     return (
         <div className="h-full flex flex-col relative">
+             {/* Sub-Tabs / Filters */}
+             <div className="flex gap-4 mb-4 pb-2 border-b border-gray-200">
+                <button 
+                    onClick={() => setFamilyFilter('all')}
+                    className={`text-sm font-bold px-3 pb-2 transition-colors border-b-2 ${familyFilter === 'all' ? 'text-navy-900 border-navy-900' : 'text-gray-400 border-transparent hover:text-navy-700'}`}
+                >
+                    Toutes les familles
+                </button>
+                <button 
+                    onClick={() => setFamilyFilter('prospects')}
+                    className={`text-sm font-bold px-3 pb-2 transition-colors border-b-2 ${familyFilter === 'prospects' ? 'text-navy-900 border-navy-900' : 'text-gray-400 border-transparent hover:text-navy-700'}`}
+                >
+                    Leads et prospects
+                </button>
+                <button 
+                    onClick={() => setFamilyFilter('active')}
+                    className={`text-sm font-bold px-3 pb-2 transition-colors border-b-2 ${familyFilter === 'active' ? 'text-navy-900 border-navy-900' : 'text-gray-400 border-transparent hover:text-navy-700'}`}
+                >
+                    Familles actives
+                </button>
+                <button 
+                    onClick={() => setFamilyFilter('archived')}
+                    className={`text-sm font-bold px-3 pb-2 transition-colors border-b-2 ${familyFilter === 'archived' ? 'text-navy-900 border-navy-900' : 'text-gray-400 border-transparent hover:text-navy-700'}`}
+                >
+                    Perdu et archivés
+                </button>
+             </div>
+
             <div className="flex gap-4 overflow-x-auto h-full pb-4 px-2 snap-x">
-                {KANBAN_COLUMNS.map(column => (
+                {getColumns().map(column => {
+                    const columnLeads = leads.filter(l => l.status === column.id);
+                    // Value Calculation Logic based on Status
+                    const totalValue = columnLeads.reduce((sum, lead) => {
+                        if (lead.status === 'Nouveau' || lead.status === 'Contact') return sum + AVERAGE_BASKET;
+                        return sum + (lead.potentialValue || 0);
+                    }, 0);
+
+                    return (
                     <div 
                         key={column.id}
                         className={`min-w-[300px] w-[300px] flex flex-col rounded-xl bg-gray-50/50 border-t-4 ${column.borderColor} shadow-sm max-h-full`}
@@ -252,18 +351,30 @@ const KanbanBoardView = () => {
                         onDrop={(e) => handleDrop(e, column.id)}
                     >
                         {/* Header */}
-                        <div className="p-3 border-b border-gray-100 flex justify-between items-center bg-white rounded-t-lg">
-                            <h3 className="font-bold text-navy-900 text-sm flex items-center gap-2">
-                                {column.title}
-                            </h3>
-                            <span className="bg-gray-100 text-gray-500 text-xs font-bold px-2 py-0.5 rounded-full">
-                                {leads.filter(l => l.status === column.id).length}
-                            </span>
+                        <div className="p-3 border-b border-gray-100 bg-white rounded-t-lg">
+                            <div className="flex justify-between items-center mb-1">
+                                <h3 className="font-bold text-navy-900 text-sm flex items-center gap-2">
+                                    {column.title}
+                                </h3>
+                                <span className="bg-gray-100 text-gray-500 text-xs font-bold px-2 py-0.5 rounded-full">
+                                    {columnLeads.length}
+                                </span>
+                            </div>
+                            {totalValue > 0 && (
+                                <div className="text-right">
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">
+                                        {column.id === 'Gagné' ? 'Montant Signé' : 'Potentiel'}
+                                    </span>
+                                    <p className={`text-xs font-bold ${column.id === 'Gagné' ? 'text-navy-900' : 'text-green-600'}`}>
+                                        {totalValue.toLocaleString('fr-FR')} €
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* Cards Container */}
                         <div className="p-2 flex-1 overflow-y-auto space-y-3">
-                            {leads.filter(l => l.status === column.id).map(lead => (
+                            {columnLeads.map(lead => (
                                 <KanbanCard 
                                     key={lead.id} 
                                     lead={lead} 
@@ -275,7 +386,7 @@ const KanbanBoardView = () => {
                             ))}
                         </div>
                     </div>
-                ))}
+                )})}
             </div>
 
             {/* Slide Over Panel */}
@@ -283,7 +394,36 @@ const KanbanBoardView = () => {
                 <LeadDetailPanel 
                     lead={selectedLead} 
                     onClose={() => setSelectedLead(null)} 
+                    onUpdate={(updatedLead) => setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l))}
                 />
+            )}
+
+            {/* Lost Reason Modal */}
+            {isLostModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl p-6 w-96 shadow-2xl animate-in zoom-in-95">
+                        <h3 className="text-lg font-bold text-navy-900 mb-4">Pourquoi ce lead est-il perdu ?</h3>
+                        <div className="space-y-2 mb-6">
+                            {['Trop cher', 'A choisi un concurrent', 'Pas intéressé', 'Plus de nouvelles', 'Autre'].map(r => (
+                                <label key={r} className="flex items-center gap-2 cursor-pointer p-2 hover:bg-gray-50 rounded-lg">
+                                    <input 
+                                        type="radio" 
+                                        name="reason" 
+                                        value={r} 
+                                        checked={lostReason === r}
+                                        onChange={(e) => setLostReason(e.target.value)}
+                                        className="text-navy-900 focus:ring-navy-900"
+                                    />
+                                    <span className="text-sm text-gray-700">{r}</span>
+                                </label>
+                            ))}
+                        </div>
+                        <div className="flex justify-end gap-3">
+                            <button onClick={() => setIsLostModalOpen(false)} className="px-4 py-2 text-gray-500 font-bold hover:text-navy-900">Annuler</button>
+                            <button onClick={confirmLost} className="px-4 py-2 bg-navy-900 text-white rounded-lg font-bold hover:bg-navy-800" disabled={!lostReason}>Confirmer</button>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -296,8 +436,38 @@ const KanbanCard = ({ lead, onClick, onDragStart, borderColor, isLost }: {
     borderColor: string,
     isLost: boolean
 }) => {
-    // Logic for urgency red dot (mocked: if ID is odd, it's urgent)
-    const isUrgent = parseInt(lead.id) % 2 !== 0 && lead.status !== 'Gagné' && lead.status !== 'Archivé' && lead.status !== 'Perdu';
+    // Calculate Urgency
+    const daysSinceLastContact = Math.floor((new Date().getTime() - new Date(lead.lastContact).getTime()) / (1000 * 3600 * 24));
+    let urgencyColor = 'bg-green-500';
+    let urgencyTitle = 'Actif';
+    
+    if (daysSinceLastContact > 5) {
+        urgencyColor = 'bg-red-500 animate-pulse';
+        urgencyTitle = 'Urgent (> 5j)';
+    } else if (daysSinceLastContact > 2) {
+        urgencyColor = 'bg-orange-500';
+        urgencyTitle = 'À traiter';
+    }
+
+    if (lead.status === 'Gagné' || lead.status === 'Archivé' || lead.status === 'Perdu') {
+        urgencyColor = 'bg-gray-300'; // No urgency for closed states
+    }
+    
+    // Value Logic for Card Display
+    const getValueDisplay = () => {
+        if (lead.status === 'Nouveau' || lead.status === 'Contact') {
+            return { label: 'Est.', amount: AVERAGE_BASKET, color: 'text-gray-400' };
+        }
+        if (lead.status === 'À reconduire') {
+            return { label: 'Renouv.', amount: lead.potentialValue, color: 'text-pink-600' };
+        }
+        if (lead.status === 'Gagné') {
+             return { label: 'Signé', amount: lead.potentialValue, color: 'text-navy-900' };
+        }
+        return { label: 'Devis', amount: lead.potentialValue, color: 'text-green-600' };
+    };
+
+    const valueInfo = getValueDisplay();
 
     return (
         <div 
@@ -310,19 +480,35 @@ const KanbanCard = ({ lead, onClick, onDragStart, borderColor, isLost }: {
                 relative group ${isLost ? 'opacity-60 grayscale' : ''}
             `}
         >
-            {isUrgent && (
-                <div className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse shadow-red-500/50 shadow-sm" title="Action requise (> 5j sans nouvelle)"></div>
-            )}
-            
-            <h4 className="font-bold text-navy-900 text-sm mb-1 truncate">{lead.name}</h4>
-            <div className="text-xs text-gray-500 font-medium mb-3 flex items-center gap-1">
-                <GraduationCap size={12} />
-                {lead.children.join(', ')}
+            {/* Header: Name + Urgency */}
+            <div className="flex justify-between items-start mb-2">
+                <h4 className="font-bold text-navy-900 text-sm truncate max-w-[200px]">{lead.name}</h4>
+                <div className={`w-2.5 h-2.5 rounded-full ${urgencyColor}`} title={urgencyTitle}></div>
+            </div>
+
+            {/* Tags (Subjects) */}
+            <div className="flex flex-wrap gap-1 mb-3">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-violet-50 text-violet-700 border border-violet-100">
+                    {lead.children[0]?.split('(')[1]?.replace(')', '') || 'Scolaire'}
+                </span>
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                    {lead.subjectNeeds?.split(' ')[0] || 'Général'}
+                </span>
             </div>
             
-            <div className="flex justify-between items-center text-[10px] text-gray-400 uppercase tracking-wide">
-                <span>{lead.subjectNeeds || 'Soutien'}</span>
-                {lead.lastContact && <span>{new Date(lead.lastContact).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short'})}</span>}
+            {/* Footer: Date + Value */}
+            <div className="flex justify-between items-center pt-2 border-t border-gray-50">
+                <div className="flex items-center gap-1 text-[10px] text-gray-400">
+                    <Clock size={10} />
+                    <span>{new Date(lead.lastContact).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short'})}</span>
+                </div>
+                {valueInfo.amount > 0 && (
+                    <div className={`flex items-center gap-1 text-xs font-bold ${valueInfo.color}`}>
+                        <span className="text-[9px] uppercase font-normal text-gray-400 mr-0.5">{valueInfo.label}</span>
+                        <Euro size={10} />
+                        <span>{valueInfo.amount}</span>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -330,17 +516,52 @@ const KanbanCard = ({ lead, onClick, onDragStart, borderColor, isLost }: {
 
 // --- SLIDE OVER DETAIL PANEL ---
 
-const LeadDetailPanel = ({ lead, onClose }: { lead: Family, onClose: () => void }) => {
+const LeadDetailPanel = ({ lead, onClose, onUpdate }: { lead: Family, onClose: () => void, onUpdate: (l: Family) => void }) => {
     const [activeTab, setActiveTab] = useState<'infos' | 'suivi' | 'documents'>('infos');
+    const [note, setNote] = useState('');
+    
+    // Quote Generator State
+    const [quoteRate, setQuoteRate] = useState(25);
+    const [quoteHours, setQuoteHours] = useState(10);
+    const [showQuoteSuccess, setShowQuoteSuccess] = useState(false);
+
+    const handleAddNote = () => {
+        if (!note.trim()) return;
+        const newActivity: Activity = {
+            id: Date.now().toString(),
+            type: 'note',
+            content: note,
+            date: new Date().toISOString().split('T')[0],
+            user: 'Vous'
+        };
+        const updatedLead = { ...lead, activities: [newActivity, ...lead.activities], lastContact: new Date().toISOString().split('T')[0] };
+        onUpdate(updatedLead);
+        setNote('');
+    };
+
+    const handleGenerateQuote = () => {
+        const amount = quoteRate * quoteHours;
+        const newActivity: Activity = {
+            id: Date.now().toString(),
+            type: 'quote',
+            content: `Devis généré : ${quoteHours}h à ${quoteRate}€/h = ${amount}€`,
+            date: new Date().toISOString().split('T')[0],
+            user: 'Vous'
+        };
+        const updatedLead: Family = { ...lead, activities: [newActivity, ...lead.activities], potentialValue: amount, status: 'Devis' as PipelineStatus };
+        onUpdate(updatedLead);
+        setShowQuoteSuccess(true);
+        setTimeout(() => setShowQuoteSuccess(false), 3000);
+    };
 
     return (
-        <div className="absolute inset-y-0 right-0 w-[450px] bg-white shadow-2xl border-l border-gray-200 z-50 flex flex-col animate-in slide-in-from-right duration-300">
+        <div className="absolute inset-y-0 right-0 w-[500px] bg-white shadow-2xl border-l border-gray-200 z-50 flex flex-col animate-in slide-in-from-right duration-300">
             {/* Header */}
             <div className="p-6 border-b border-gray-100 bg-navy-900 text-white flex justify-between items-start">
                 <div>
                     <h2 className="text-xl font-serif font-bold">{lead.name}</h2>
                     <p className="text-navy-300 text-sm mt-1 flex items-center gap-2">
-                        <MapPin size={14} /> {lead.city}
+                        <MapPin size={14} /> {lead.city} • <span className="text-gold-400 font-bold">{lead.status}</span>
                     </p>
                 </div>
                 <button onClick={onClose} className="text-navy-400 hover:text-white transition-colors">
@@ -351,99 +572,214 @@ const LeadDetailPanel = ({ lead, onClose }: { lead: Family, onClose: () => void 
             {/* Tabs */}
             <div className="flex border-b border-gray-200">
                 <button onClick={() => setActiveTab('infos')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'infos' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>Infos</button>
-                <button onClick={() => setActiveTab('suivi')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'suivi' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>Suivi</button>
-                <button onClick={() => setActiveTab('documents')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'documents' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>Documents</button>
+                <button onClick={() => setActiveTab('suivi')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'suivi' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>Suivi & Timeline</button>
+                <button onClick={() => setActiveTab('documents')} className={`flex-1 py-3 text-sm font-bold border-b-2 ${activeTab === 'documents' ? 'border-navy-900 text-navy-900' : 'border-transparent text-gray-400 hover:text-navy-700'}`}>Devis Express</button>
             </div>
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 bg-gray-50">
                 {activeTab === 'infos' && (
                     <div className="space-y-6">
-                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Coordonnées</h3>
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><Phone size={16} /></div>
-                                    <p className="font-bold text-navy-900">{lead.phone}</p>
+                        {/* Actions Rapides */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <a href={`tel:${lead.phone.replace(/ /g, '')}`} className="bg-green-500 hover:bg-green-600 text-white p-3 rounded-xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-green-500/20 transition-all">
+                                <Phone size={18} /> Appeler
+                            </a>
+                            <a href={`mailto:${lead.email}`} className="bg-white border border-gray-200 hover:border-navy-900 text-navy-900 p-3 rounded-xl flex items-center justify-center gap-2 font-bold transition-all">
+                                <Mail size={18} /> Email
+                            </a>
+                        </div>
+
+                        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                <UserCheck size={14} /> Coordonnées
+                            </h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-xs text-gray-400">Téléphone</p>
+                                    <p className="font-bold text-navy-900 text-lg">{lead.phone}</p>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center"><Mail size={16} /></div>
-                                    <p className="font-bold text-navy-900 text-sm">{lead.email}</p>
+                                <div>
+                                    <p className="text-xs text-gray-400">Email</p>
+                                    <p className="font-bold text-navy-900">{lead.email}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-gray-400">Ville</p>
+                                    <p className="font-bold text-navy-900">{lead.city}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4">Besoin identifié</h3>
+                        <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                <Target size={14} /> Besoin Pédagogique
+                            </h3>
                             <div className="space-y-2">
-                                <p className="text-sm"><span className="font-semibold">Élève(s) :</span> {lead.children.join(', ')}</p>
-                                <p className="text-sm"><span className="font-semibold">Matière :</span> {lead.subjectNeeds}</p>
-                                <p className="text-sm"><span className="font-semibold">Source :</span> {lead.source || 'Non renseigné'}</p>
+                                <div className="flex justify-between border-b border-gray-50 pb-2">
+                                    <span className="text-gray-600 text-sm">Élève(s)</span>
+                                    <span className="font-bold text-navy-900">{lead.children.join(', ')}</span>
+                                </div>
+                                <div className="flex justify-between border-b border-gray-50 pb-2">
+                                    <span className="text-gray-600 text-sm">Matière</span>
+                                    <span className="font-bold text-navy-900">{lead.subjectNeeds}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-600 text-sm">Source</span>
+                                    <span className="font-bold text-violet-600">{lead.source || 'Non renseigné'}</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {activeTab === 'suivi' && (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
+                        {/* Note Taker */}
                         <div className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm">
-                            <textarea placeholder="Ajouter une note rapide..." className="w-full text-sm resize-none outline-none text-navy-900" rows={3}></textarea>
+                            <textarea 
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
+                                placeholder="Ajouter une note au dossier..." 
+                                className="w-full text-sm resize-none outline-none text-navy-900 placeholder:text-gray-400" 
+                                rows={3}
+                            ></textarea>
                             <div className="flex justify-end mt-2">
-                                <button className="bg-navy-900 text-white px-3 py-1.5 rounded-lg text-xs font-bold">Ajouter</button>
+                                <button onClick={handleAddNote} className="bg-navy-900 text-white px-4 py-1.5 rounded-lg text-xs font-bold flex items-center gap-2 hover:bg-navy-800 transition-colors">
+                                    <Save size={14} /> Enregistrer
+                                </button>
                             </div>
                         </div>
 
-                        <div className="border-l-2 border-gray-200 ml-3 pl-6 space-y-6 py-2">
+                        {/* Timeline */}
+                        <div className="relative pl-6 border-l-2 border-gray-200 space-y-8">
+                            {lead.activities.map((activity) => (
+                                <div key={activity.id} className="relative group">
+                                    <div className={`
+                                        absolute -left-[33px] p-1.5 rounded-full border-2 border-white shadow-sm
+                                        ${activity.type === 'call' ? 'bg-green-100 text-green-600' : 
+                                          activity.type === 'quote' ? 'bg-gold-100 text-gold-600' :
+                                          activity.type === 'status_change' ? 'bg-blue-100 text-blue-600' :
+                                          'bg-gray-100 text-gray-500'}
+                                    `}>
+                                        {activity.type === 'call' && <PhoneOutgoing size={14} />}
+                                        {activity.type === 'quote' && <FileIcon size={14} />}
+                                        {activity.type === 'status_change' && <ArrowRight size={14} />}
+                                        {(activity.type === 'note' || activity.type === 'meeting') && <FileText size={14} />}
+                                    </div>
+                                    
+                                    <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm group-hover:shadow-md transition-shadow">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className="text-xs font-bold text-gray-400 uppercase">{activity.date}</span>
+                                            <span className="text-[10px] font-bold bg-gray-50 text-gray-500 px-2 py-0.5 rounded-full">{activity.user}</span>
+                                        </div>
+                                        <p className="text-sm text-navy-900 leading-relaxed font-medium">
+                                            {activity.content}
+                                        </p>
+                                    </div>
+                                </div>
+                            ))}
+                            
+                            {/* Start Point */}
                             <div className="relative">
-                                <div className="absolute -left-[31px] bg-orange-100 text-orange-600 p-1 rounded-full border border-white"><Phone size={12} /></div>
-                                <p className="text-sm font-bold text-navy-900">Appel sortant (Répondeur)</p>
-                                <p className="text-xs text-gray-500">Hier à 14h30</p>
-                            </div>
-                            <div className="relative">
-                                <div className="absolute -left-[31px] bg-blue-100 text-blue-600 p-1 rounded-full border border-white"><ArrowRight size={12} /></div>
-                                <p className="text-sm font-bold text-navy-900">Lead créé</p>
-                                <p className="text-xs text-gray-500">Le {lead.lastContact}</p>
+                                <div className="absolute -left-[29px] w-3 h-3 bg-gray-300 rounded-full border-2 border-white"></div>
+                                <p className="text-xs text-gray-400 italic">Création du lead</p>
                             </div>
                         </div>
                     </div>
                 )}
 
                 {activeTab === 'documents' && (
-                    <div className="space-y-4">
-                        <button className="w-full bg-white border border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center text-gray-500 hover:border-gold-500 hover:text-gold-600 hover:bg-gold-50 transition-all">
-                            <PenTool size={24} className="mb-2" />
-                            <span className="font-bold">Générer un Devis</span>
-                        </button>
-                        
-                        {lead.status === 'Devis' || lead.status === 'Contrat' || lead.status === 'Gagné' ? (
-                            <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-red-50 text-red-600 p-2 rounded-lg"><FileIcon size={20} /></div>
-                                    <div>
-                                        <p className="font-bold text-sm text-navy-900">Devis #{lead.id}001.pdf</p>
-                                        <p className="text-xs text-gray-500">Créé le 24/10/2025</p>
-                                    </div>
+                    <div className="space-y-6">
+                        {/* Quote Generator */}
+                        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+                            <h3 className="font-bold text-navy-900 mb-4 flex items-center gap-2">
+                                <PenTool size={18} className="text-gold-500" /> Générateur Express
+                            </h3>
+                            
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label className="text-xs text-gray-500 font-bold uppercase">Tarif Horaire (€)</label>
+                                    <input 
+                                        type="number" 
+                                        value={quoteRate}
+                                        onChange={(e) => setQuoteRate(Number(e.target.value))}
+                                        className="w-full mt-1 p-2 border border-gray-200 rounded-lg font-bold text-navy-900" 
+                                    />
                                 </div>
-                                <button className="text-navy-400 hover:text-navy-900"><MoreHorizontal size={20}/></button>
+                                <div>
+                                    <label className="text-xs text-gray-500 font-bold uppercase">Volume (Heures)</label>
+                                    <input 
+                                        type="number" 
+                                        value={quoteHours}
+                                        onChange={(e) => setQuoteHours(Number(e.target.value))}
+                                        className="w-full mt-1 p-2 border border-gray-200 rounded-lg font-bold text-navy-900" 
+                                    />
+                                </div>
                             </div>
-                        ) : null}
 
-                         <button className="w-full bg-white border border-dashed border-gray-300 rounded-xl p-4 flex flex-col items-center justify-center text-gray-500 hover:border-violet-500 hover:text-violet-600 hover:bg-violet-50 transition-all">
-                            <FileCheck size={24} className="mb-2" />
-                            <span className="font-bold">Générer Contrat</span>
-                        </button>
+                            <div className="bg-gray-50 p-4 rounded-lg mb-6 flex justify-between items-center">
+                                <span className="text-sm font-medium text-gray-600">Total Devis</span>
+                                <span className="text-xl font-extrabold text-navy-900">{(quoteRate * quoteHours).toLocaleString()} €</span>
+                            </div>
+
+                            <button 
+                                onClick={handleGenerateQuote}
+                                className="w-full bg-navy-900 hover:bg-navy-800 text-white py-3 rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2"
+                            >
+                                {showQuoteSuccess ? <CheckCircle className="animate-bounce" /> : <FileCheck />}
+                                {showQuoteSuccess ? 'Devis Créé !' : 'Générer le PDF'}
+                            </button>
+                        </div>
+
+                         {/* Existing Docs */}
+                        <div>
+                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Documents existants</h4>
+                             {lead.activities.filter(a => a.type === 'quote').length === 0 && (
+                                 <p className="text-sm text-gray-400 italic">Aucun document pour le moment.</p>
+                             )}
+                             {lead.activities.filter(a => a.type === 'quote').map(doc => (
+                                <div key={doc.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between mb-2 hover:border-violet-200 transition-colors cursor-pointer">
+                                    <div className="flex items-center gap-3">
+                                        <div className="bg-red-50 text-red-600 p-2 rounded-lg"><FileIcon size={20} /></div>
+                                        <div>
+                                            <p className="font-bold text-sm text-navy-900 truncate max-w-[180px]">{doc.content}</p>
+                                            <p className="text-xs text-gray-500">{doc.date}</p>
+                                        </div>
+                                    </div>
+                                    <button className="text-navy-400 hover:text-navy-900"><MoreHorizontal size={20}/></button>
+                                </div>
+                             ))}
+                        </div>
                     </div>
                 )}
             </div>
             
             {/* Footer Actions */}
-            <div className="p-4 border-t border-gray-200 bg-white">
-                <button className="w-full bg-gold-500 hover:bg-gold-600 text-navy-900 py-3 rounded-xl font-bold transition-colors shadow-lg">
-                    Action Suivante
+            <div className="p-4 border-t border-gray-200 bg-white flex gap-3">
+                 {lead.status !== 'Gagné' && (
+                    <button onClick={() => { updateLeadStatus(lead.id, 'Gagné'); onClose(); }} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition-colors shadow-lg">
+                        Conclure (Gagné)
+                    </button>
+                 )}
+                 <button className="flex-1 bg-navy-900 hover:bg-navy-800 text-white py-3 rounded-xl font-bold transition-colors shadow-lg flex items-center justify-center gap-2">
+                    Action Suivante <ChevronRight size={16} />
                 </button>
             </div>
         </div>
     );
+    
+    // Helper to update lead status from within the panel (mock implementation wrapper)
+    function updateLeadStatus(id: string, status: PipelineStatus) {
+         const newActivity: Activity = {
+            id: Date.now().toString(),
+            type: 'status_change',
+            content: `Déplacé vers ${status} depuis le panneau`,
+            date: new Date().toISOString().split('T')[0],
+            user: 'Vous'
+        };
+        const updatedLead = { ...lead, status: status, activities: [newActivity, ...lead.activities] };
+        onUpdate(updatedLead);
+    }
 };
 
 // --- EXISTING DASHBOARD VIEW (Unchanged mainly, just rendering) ---
@@ -819,6 +1155,7 @@ const StatusBadge = ({ status }: { status: string }) => {
         case 'Ancien': case 'Inactif': case 'Perdu': styles = "bg-gray-100 text-gray-500 border border-gray-200"; break;
         case 'Devis': styles = "bg-yellow-100 text-yellow-700 border border-yellow-200"; break;
         case 'Contrat': styles = "bg-purple-100 text-purple-700 border border-purple-200"; break;
+        case 'À reconduire': styles = "bg-pink-100 text-pink-700 border border-pink-200"; break;
     }
     return <span className={`px-3 py-1 rounded-full text-xs font-bold ${styles}`}>{status}</span>;
 };

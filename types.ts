@@ -42,8 +42,17 @@ export type PipelineStatus =
   | 'Devis' 
   | 'Contrat' 
   | 'Gagné' 
+  | 'À reconduire'
   | 'Perdu' 
   | 'Archivé';
+
+export interface Activity {
+  id: string;
+  type: 'call' | 'email' | 'note' | 'status_change' | 'quote' | 'meeting';
+  content: string;
+  date: string;
+  user: string; // "Matthieu", "Système", etc.
+}
 
 export interface Family {
   id: string;
@@ -53,10 +62,12 @@ export interface Family {
   city: string;
   status: PipelineStatus; // Updated status type
   children: string[];
-  lastContact: string;
+  lastContact: string; // Date ISO YYYY-MM-DD
   remainingHours: number; // Pour le renouvellement
   subjectNeeds?: string; // Pour l'affichage carte
   source?: string; // Pour le détail
+  potentialValue: number; // Montant estimé du contrat
+  activities: Activity[]; // Historique
 }
 
 export interface Teacher {
