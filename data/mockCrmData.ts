@@ -1,0 +1,41 @@
+
+import { Family, Teacher, Mission, Report, FinancialStats } from '../types';
+
+export const MOCK_FAMILIES: Family[] = [
+  { id: '1', name: 'Famille Dupont', email: 'dupont@email.com', phone: '06 12 34 56 78', city: 'Narbonne', status: 'Client', children: ['Léa (3ème)', 'Tom (CM2)'], lastContact: '2023-10-05', remainingHours: 12 },
+  { id: '2', name: 'Famille Martin', email: 'martin@email.com', phone: '06 98 76 54 32', city: 'Sigean', status: 'Lead', children: ['Lucas (Terminale)'], lastContact: '2023-10-12', remainingHours: 0 },
+  { id: '3', name: 'Famille Bernard', email: 'bernard@email.com', phone: '06 11 22 33 44', city: 'Gruissan', status: 'Client', children: ['Emma (1ère)'], lastContact: '2023-09-28', remainingHours: 2 }, // A renouveler
+  { id: '4', name: 'Famille Petit', email: 'petit@email.com', phone: '06 55 44 33 22', city: 'Narbonne', status: 'Ancien', children: ['Hugo (Bac+1)'], lastContact: '2023-06-15', remainingHours: 0 },
+  { id: '5', name: 'Famille Garcia', email: 'garcia@email.com', phone: '06 77 88 99 00', city: 'Coursan', status: 'Lead', children: ['Sofia (Seconde)'], lastContact: '2023-10-14', remainingHours: 0 },
+];
+
+export const MOCK_TEACHERS: Teacher[] = [
+  { id: '101', name: 'Jean Valjean', email: 'j.valjean@prof.com', phone: '07 00 00 00 01', subjects: ['Maths', 'Physique'], cities: ['Narbonne', 'Vinassan'], status: 'Actif', skills: ['Pédagogue', 'Lycée'] },
+  { id: '102', name: 'Cosette Thénardier', email: 'cosette@prof.com', phone: '07 00 00 00 02', subjects: ['Anglais', 'Français'], cities: ['Narbonne', 'Sigean'], status: 'Actif', skills: ['Certifié', 'Collège'] },
+  { id: '103', name: 'Marius Pontmercy', email: 'marius@prof.com', phone: '07 00 00 00 03', subjects: ['Histoire', 'Philo'], cities: ['Narbonne'], status: 'Candidat', skills: ['Débutant'] },
+  { id: '104', name: 'Gavroche', email: 'gavroche@prof.com', phone: '07 00 00 00 04', subjects: ['Maths'], cities: ['Coursan'], status: 'Inactif', skills: [] },
+];
+
+export const MOCK_MISSIONS: Mission[] = [
+  { id: 'm1', familyId: '2', familyName: 'Famille Martin', subject: 'Mathématiques', level: 'Terminale', hoursPerWeek: 2, status: 'En recherche' },
+  { id: 'm2', familyId: '1', familyName: 'Famille Dupont', subject: 'Anglais', level: '3ème', hoursPerWeek: 1.5, status: 'Validée', assignedTeacherId: '102' },
+  { id: 'm3', familyId: '3', familyName: 'Famille Bernard', subject: 'Français', level: '1ère', hoursPerWeek: 2, status: 'Proposition', assignedTeacherId: '102' },
+];
+
+export const MOCK_REPORTS: Report[] = [
+  { id: 'r1', date: '2023-10-10', teacherName: 'Cosette Thénardier', studentName: 'Léa Dupont', content: 'Bonne progression sur la grammaire. Attention aux verbes irréguliers.', status: 'En attente' },
+  { id: 'r2', date: '2023-10-03', teacherName: 'Jean Valjean', studentName: 'Lucas Martin', content: 'Chapitre sur les intégrales terminé. Exercices à faire pour la semaine prochaine.', status: 'Validé' },
+];
+
+export const MOCK_FINANCIALS: FinancialStats = {
+  month: {
+    signed: 4200,
+    pipe: 2450, // Pipe is equivalent to pending contracts, same for month/year view
+    objective: 5500
+  },
+  year: {
+    signed: 84000,
+    pipe: 2450, // Pipe is equivalent to pending contracts, same for month/year view
+    objective: 110000 // Objectif YTD ou annuel global
+  }
+};

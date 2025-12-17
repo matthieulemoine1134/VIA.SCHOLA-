@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import Layout from './components/Layout';
 import Hero from './components/Hero';
@@ -7,6 +8,7 @@ import ContactSection from './components/ContactSection';
 import AiAdvisor from './components/AiAdvisor';
 import ContactModal from './components/ContactModal';
 import ConstructionPage from './components/ConstructionPage';
+import CrmDashboard from './components/crm/CrmDashboard';
 import { PageView } from './types';
 
 function App() {
@@ -61,8 +63,12 @@ function App() {
                 onBack={() => handleNavigate('home')} 
               />
             )}
+
+            {currentView === 'admin' && (
+              <CrmDashboard onLogout={() => handleNavigate('home')} />
+            )}
             
-            <AiAdvisor />
+            {currentView !== 'admin' && <AiAdvisor />}
         </Layout>
         
         <ContactModal 

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { Menu, X, Phone, User, Briefcase, GraduationCap } from 'lucide-react';
+import { Menu, X, Phone, User, Briefcase, GraduationCap, ShieldCheck } from 'lucide-react';
 import { NAV_ITEMS, COMPANY_INFO } from '../constants';
 import { PageView } from '../types';
 
@@ -42,6 +43,14 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal, onNavigate, curr
       {/* Top Bar - Trust & Contact - Navy Background */}
       <div className="bg-navy-900 text-white text-xs py-2 px-4 flex justify-between items-center z-50 relative border-b border-navy-800">
         <div className="flex items-center gap-4">
+          <button 
+             onClick={() => onNavigate('admin')}
+             className="flex items-center gap-1 hover:text-gold-400 transition-colors opacity-50 hover:opacity-100"
+             title="Accès Administration"
+          >
+             <ShieldCheck size={12} /> <span className="hidden sm:inline">Admin</span>
+          </button>
+          <span className="hidden sm:inline opacity-30">|</span>
           <span className="hidden sm:inline opacity-80">📍 Agence Narbonne</span>
           <a href={`tel:${COMPANY_INFO.phone.replace(/ /g, '')}`} className="flex items-center gap-1 hover:text-gold-400 transition-colors font-semibold tracking-wide">
             <Phone size={12} className="text-gold-500" /> {COMPANY_INFO.phone}
@@ -63,7 +72,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal, onNavigate, curr
         </div>
       </div>
 
-      {/* Main Header */}
+      {currentView !== 'admin' && (
       <header className={`sticky top-0 w-full z-40 transition-all duration-300 ${scrolled ? 'glass-panel shadow-md py-2' : 'bg-transparent py-4'}`}>
         <div className="container mx-auto px-4 flex justify-between items-center">
           {/* Logo - Serif Font */}
@@ -128,13 +137,14 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal, onNavigate, curr
           </div>
         )}
       </header>
+      )}
 
       {/* Main Content */}
       <main className="flex-grow">
         {children}
       </main>
 
-      {/* Footer - Navy Background */}
+      {currentView !== 'admin' && (
       <footer className="bg-navy-950 text-navy-300 py-16 text-sm border-t border-navy-900 relative overflow-hidden">
         {/* Decorative Guiding Line */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-px h-full bg-gradient-to-b from-navy-800 to-transparent opacity-20"></div>
@@ -181,6 +191,7 @@ const Layout: React.FC<LayoutProps> = ({ children, onOpenModal, onNavigate, curr
           &copy; 2025 Via Schola. Tous droits réservés. Hébergé en France (o2switch).
         </div>
       </footer>
+      )}
     </div>
   );
 };
