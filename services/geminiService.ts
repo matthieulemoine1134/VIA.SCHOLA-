@@ -1,3 +1,4 @@
+
 import { GoogleGenAI } from "@google/genai";
 
 const SYSTEM_INSTRUCTION = `
@@ -40,10 +41,12 @@ export const sendMessageToGemini = async (message: string): Promise<string> => {
       return "Je suis désolé, je ne suis pas connecté pour le moment.";
     }
 
-    const ai = new GoogleGenAI({ apiKey });
+    // Fix: Using named parameter for GoogleGenAI initialization
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
+    // Fix: Updated model to gemini-3-flash-preview as per coding guidelines
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: [{ role: 'user', parts: [{ text: message }] }],
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
@@ -52,7 +55,8 @@ export const sendMessageToGemini = async (message: string): Promise<string> => {
       },
     });
 
-    return response.text() || "Désolé, je n'ai pas pu générer de réponse.";
+    // Fix: Access response.text property directly, do not call response.text() as a method
+    return response.text || "Désolé, je n'ai pas pu générer de réponse.";
   } catch (error) {
     console.error("Gemini API Error:", error);
     return "Une erreur est survenue lors de la communication avec le conseiller virtuel.";

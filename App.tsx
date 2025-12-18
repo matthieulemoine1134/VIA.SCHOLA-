@@ -12,7 +12,7 @@ import ConstructionPage from './components/ConstructionPage';
 import CrmDashboard from './components/crm/CrmDashboard';
 import FamilyDashboard from './components/dashboards/FamilyDashboard';
 import TeacherDashboard from './components/dashboards/TeacherDashboard';
-import { PageView, Family, Activity } from './types';
+import { PageView, Family, Activity, Child } from './types';
 import { MOCK_FAMILIES } from './data/mockCrmData';
 
 function App() {
@@ -58,19 +58,40 @@ function App() {
 
   // Function to add a new lead from the public form
   const handleAddLead = (formData: any) => {
+      const childFirstName = formData.details?.split(' ')[0] || 'Élève';
+      const newChild: Child = {
+          id: Date.now().toString() + '-c',
+          firstName: childFirstName,
+          class: formData.studentClass || 'Non définie',
+          subjects: formData.subject || 'Soutien général',
+          needs: formData.details || 'Aucun détail fourni',
+          average: '-',
+          school: '-',
+          orientation: '-',
+          personality: '-',
+          hobbies: '-',
+          availability: '-'
+      };
+
       const newLead: Family = {
           id: Date.now().toString(),
           name: formData.parentName,
+          civility: 'Mme/Mr',
+          firstName: '',
+          lastName: formData.parentName,
           email: formData.email,
           phone: formData.phone,
-          city: 'Narbonne (Web)', // Default location for web leads
+          address: '',
+          zipCity: '',
+          country: 'France',
+          city: 'Narbonne (Web)', 
           status: 'Nouveau',
-          children: [formData.studentClass || 'Élève'],
-          subjectNeeds: `${formData.subject || 'Soutien général'} - ${formData.details || ''}`.trim(),
+          children: [newChild],
+          subjectNeeds: `${formData.subject || 'Soutien général'}`,
           lastContact: new Date().toISOString().split('T')[0],
           remainingHours: 0,
-          source: 'Formulaire Site',
-          potentialValue: 600, // Default basket value
+          source: 'Site Web',
+          potentialValue: 600, 
           activities: [
               {
                   id: Date.now().toString(),
@@ -103,21 +124,6 @@ function App() {
               </>
             )}
             
-            {/* Fallback pages if needed, but Login now routes to dashboards */}
-            {currentView === 'construction-famille' && (
-              <ConstructionPage 
-                title="Espace Famille" 
-                onBack={() => handleNavigate('home')} 
-              />
-            )}
-
-            {currentView === 'construction-enseignant' && (
-              <ConstructionPage 
-                title="Espace Enseignant" 
-                onBack={() => handleNavigate('home')} 
-              />
-            )}
-
             {currentView === 'admin' && (
               <CrmDashboard 
                 initialLeads={crmLeads} 

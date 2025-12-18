@@ -41,7 +41,6 @@ export interface Review {
 
 // CRM Types
 
-// Nouveaux statuts pour le Kanban
 export type PipelineStatus = 
   | 'Nouveau' 
   | 'Contact' 
@@ -54,26 +53,46 @@ export type PipelineStatus =
 
 export interface Activity {
   id: string;
-  type: 'call' | 'email' | 'note' | 'status_change' | 'quote' | 'meeting';
+  type: 'call' | 'email' | 'note' | 'status_change' | 'quote' | 'meeting' | 'contract';
   content: string;
   date: string;
-  user: string; // "Matthieu", "Système", etc.
+  user: string;
+}
+
+export interface Child {
+  id: string;
+  firstName: string;
+  class: string;
+  subjects: string;
+  needs: string;
+  average: string;
+  school: string;
+  orientation: string;
+  personality: string;
+  hobbies: string;
+  availability: string;
 }
 
 export interface Family {
   id: string;
-  name: string;
+  name: string; // Nom de famille global (utilisé pour l'affichage liste)
+  civility: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
-  city: string;
-  status: PipelineStatus; // Updated status type
-  children: string[];
-  lastContact: string; // Date ISO YYYY-MM-DD
-  remainingHours: number; // Pour le renouvellement
-  subjectNeeds?: string; // Pour l'affichage carte
-  source?: string; // Pour le détail
-  potentialValue: number; // Montant estimé du contrat
-  activities: Activity[]; // Historique
+  address: string;
+  zipCity: string;
+  country: string;
+  city: string; // Pour compatibilité existante
+  status: PipelineStatus;
+  children: Child[];
+  lastContact: string; 
+  remainingHours: number;
+  subjectNeeds?: string;
+  source?: string;
+  potentialValue: number;
+  activities: Activity[];
 }
 
 export interface Teacher {
@@ -91,20 +110,16 @@ export interface Mission {
   id: string;
   familyId: string;
   familyName: string;
+  childId?: string;
   subject: string;
   level: string;
   hoursPerWeek: number;
+  sessionDuration: number; // en heures
+  weeksCount: number;
+  hourlyRate: number;
+  totalAmount: number;
   status: 'En recherche' | 'Proposition' | 'Validée' | 'Terminée';
   assignedTeacherId?: string;
-}
-
-export interface Report {
-  id: string;
-  date: string;
-  teacherName: string;
-  studentName: string;
-  content: string;
-  status: 'En attente' | 'Validé';
 }
 
 export interface FinancialStats {
@@ -116,29 +131,27 @@ export interface FinancialStats {
   year: {
     signed: number;
     pipe: number;
-    objective: number; // YTD Objective or Total Annual Objective
+    objective: number;
   }
 }
 
-// --- SETTINGS TYPES ---
-
 export interface PricingRule {
     id: string;
-    level: string; // Collège, Lycée, Supérieur
-    basePrice: number; // Prix de vente horaire
+    level: string;
+    basePrice: number;
 }
 
 export interface GeographicZone {
     id: string;
-    name: string; // Narbonne, Grand Narbonne, Hors Zone
-    supplement: number; // Supplément par heure ou forfait
+    name: string;
+    supplement: number;
 }
 
 export interface SalaryRule {
     id: string;
-    qualification: string; // Bac+3, Certifié, Agrégé
-    hourlyWageBrut: number; // Salaire brut horaire
-    hourlyWageNet: number; // Salaire net estimé
+    qualification: string;
+    hourlyWageBrut: number;
+    hourlyWageNet: number;
 }
 
 export interface DocumentTemplate {
@@ -146,4 +159,22 @@ export interface DocumentTemplate {
     name: string;
     type: 'Devis' | 'Contrat Famille' | 'Contrat Travail' | 'Facture';
     lastUpdated: string;
+}
+
+// Fix: Added missing Report interface as required by mock data
+export interface Report {
+  id: string;
+  date: string;
+  teacherName: string;
+  studentName: string;
+  content: string;
+  status: string;
+}
+
+// Fix: Added missing KanbanColumnDef interface as used in CRM dashboard
+export interface KanbanColumnDef {
+  id: PipelineStatus;
+  title: string;
+  color: string;
+  borderColor: string;
 }
